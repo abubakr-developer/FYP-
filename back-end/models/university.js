@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const programSchema = new mongoose.Schema({
   programName: { type: String, required: true }, // e.g. "BS Computer Science", "BS-IT", "LLB"

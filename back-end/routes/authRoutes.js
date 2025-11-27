@@ -1,5 +1,6 @@
 import express from 'express';
 import { register, login, forgetPassword, resetPassword, verifyOtp, updateProfile, getCurrentUser } from '../controller/authController.js';
+import { getRecommendations } from '../controller/studentController.js';
 import { registerUploads } from '../middlewaee/multer.js';
 import userAuth from '../middlewaee/userAuth.js';
 const authRouter = express.Router();
@@ -10,7 +11,8 @@ authRouter.post('/login', login);
 authRouter.post('/forgetPassword', forgetPassword);
 authRouter.post('/resetPassword', resetPassword);
 authRouter.post('/verifyOtp', verifyOtp);
+authRouter.post('/getRecommendations', userAuth, getRecommendations);
 authRouter.put('/updateProfile/:id',userAuth, updateProfile);
 authRouter.get('/getCurrentUser',userAuth, getCurrentUser)
 
-export default authRouter;
+export default authRouter; 

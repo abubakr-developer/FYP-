@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import universityRoutes from './routes/universityRoutes.js';
 import user from './models/user.js';
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/files", express.static("files"));
 app.get("/", (req, res) => res.send("Hello World"));
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/university", universityRoutes);
 
 const startServer = async () => {
   try {

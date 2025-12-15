@@ -9,9 +9,9 @@ export const fscResult = async (req, res) => {
     if (percentage === undefined || percentage === null || percentage < 33 || percentage > 100) {
       return res.status(400).json({ message: "Please provide a valid intermediate percentage between 33 and 100.", success: false });
     }
-    if (!req.file) {
-      return res.status(400).json({ message: "Please upload your result card.", success: false });
-    }
+    // if (!req.file) {
+    //   return res.status(400).json({ message: "Please upload your result card.", success: false });
+    // }
 
     const student = await User.findById(req.user._id);
     if (!student || student.role !== "student") {
@@ -20,10 +20,10 @@ export const fscResult = async (req, res) => {
 
     // store submitted values on the student and save
     student.intermediatePercentage = percentage;
-    student.resultCardUrl = req.file.path || req.file.location || req.file.filename || "";
+    // student.resultCardUrl = req.file.path || req.file.location || req.file.filename || "";
 
     await student.save();
-    return res.status(200).json({ message: "FSC result uploaded successfully", success: true});
+    return res.status(200).json({ message: "FSC result Percentage uploaded successfully", success: true});
   } catch (error) {
     res.status(500).json({ message: error.message, success: false });
   }

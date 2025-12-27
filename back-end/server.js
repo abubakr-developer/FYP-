@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import universityRoutes from './routes/universityRoutes.js';
+import superAdminRoutes from './routes/superAdminRoutes.js';
 import user from './models/user.js';
 
 const app = express();
@@ -22,6 +23,7 @@ app.get("/", (req, res) => res.send("Hello World"));
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/university", universityRoutes);
+app.use("/api/superadmin", superAdminRoutes);
 
 const startServer = async () => {
   try {

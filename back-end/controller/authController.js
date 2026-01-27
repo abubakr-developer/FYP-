@@ -5,6 +5,10 @@ import nodemailer from "nodemailer";
 import validator from "validator"
 import otpGenerator from "otp-generator"
 
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import User from '../models/user.js';
+
 export const register = async (req, res) => {
   try {
     // Debug: Log the incoming request body
@@ -18,23 +22,68 @@ export const register = async (req, res) => {
       });
     }
 
-    // Destructure all fields from req.body
-    const { firstname, lastname, email, password, profileImage, document } = req.body;
+    // Destructure all fields from req.body (matching frontend field names)
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      phone, 
+      password, 
+      confirmPassword, 
+      percentage 
+    } = req.body;
 
     // Validate required fields
-    if (!firstname || !lastname || !email || !password) {
+    if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "First name, last name, email, and password are required",
+        message: "All fields are required",
       });
     }
 
-    // Validate password strength
-    if (password.length < 8) {
+    // Validate passwords match
+    if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 8 characters long",
+        message: "Passwords do not match",
       });
+    }
+
+    // Validate password strength (matching frontend validation)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters with uppercase, lowercase, and number",
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
+
+    // Validate phone number (basic validation)
+    if (phone.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid phone number",
+      });
+    }
+
+    // Validate percentage if provided
+    if (percentage !== undefined && percentage !== null && percentage !== "") {
+      const percentageNum = parseFloat(percentage);
+      if (isNaN(percentageNum) || percentageNum < 0 || percentageNum > 100) {
+        return res.status(400).json({
+          success: false,
+          message: "Percentage must be between 0 and 100",
+        });
+      }
     }
 
     // Check if email exists
@@ -51,11 +100,12 @@ export const register = async (req, res) => {
 
     // Create new user
     const user = new User({
-      name: `${firstname.trim()} ${lastname.trim()}`,
-      email: email.toLowerCase(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.toLowerCase().trim(),
+      phone: phone.trim(),
       password: hashedPassword,
-      profileImage: profileImage || "", // Handle optional field
-      document: document || "", // Handle optional field
+      percentage: percentage ? parseFloat(percentage) : null,
     });
 
     await user.save();
@@ -70,42 +120,49 @@ export const register = async (req, res) => {
 
     // Create JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "1h",
+      expiresIn: "24h", // Extended to 24h for better UX
     });
 
     return res.status(201).json({
       success: true,
       user: {
         id: user._id,
-        firstname: user.firstname,
-        lastname: user.lastname,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
-        profileImage: user.profileImage,
-        document: user.document,
+        phone: user.phone,
+        percentage: user.percentage,
       },
       token,
-      message: "User created successfully",
+      message: "User registered successfully",
     });
   } catch (error) {
     console.error("Registration Error:", {
       message: error.message,
       stack: error.stack,
-      email: req.body?.email || "No email provided",
-      body: req.body, // Debug entire payload
+      body: req.body,
     });
 
     // Handle Mongoose validation errors
-    // if (error.name === "ValidationError") {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Validation error: " + Object.values(error.errors).map(e => e.message).join(", "),
-    //   });
-    // }
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: Object.values(error.errors).map(e => e.message).join(", "),
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Email or phone already exists",
+      });
+    }
 
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message, // Include specific error for debugging
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };

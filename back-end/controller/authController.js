@@ -5,10 +5,6 @@ import nodemailer from "nodemailer";
 import validator from "validator"
 import otpGenerator from "otp-generator"
 
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import User from '../models/user.js';
-
 export const register = async (req, res) => {
   try {
     // Debug: Log the incoming request body

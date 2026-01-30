@@ -7,6 +7,10 @@ import { Label } from "@/components/ui/label";
 import { GraduationCap, AlertCircle } from "lucide-react";
 import { registerSchema, validateForm } from "@/lib/validation";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+
+// API Base URL - Update this to match your backend URL
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -43,9 +47,10 @@ export default function Register() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrors({});
 
     // Parse percentage as number for validation
     const dataToValidate = {
@@ -66,13 +71,66 @@ export default function Register() {
       return;
     }
 
-    // Note: In a real application, this would call an authentication API
-    // Currently this is a demo without backend authentication
-    toast({
-      title: "Demo Mode",
-      description: "Registration would be processed here. Backend authentication coming soon!",
-    });
-    setIsSubmitting(false);
+    try {
+      // Prepare data for API
+      const registrationData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        percentage: formData.percentage ? parseFloat(formData.percentage) : null,
+      };
+
+      // Call registration API
+      const response = await axios.post(
+        `${API_URL}/api/auth/register`,
+        registrationData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Handle successful registration
+      if (response.data.success) {
+        // Store token in localStorage
+        localStorage.setItem("token", response.data.token);
+        
+        // Store user data if needed
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+
+        toast({
+          title: "Success!",
+          description: response.data.message || "Account created successfully!",
+        });
+
+        // Redirect to login or dashboard
+        setTimeout(() => {
+          navigate("/login"); // or navigate("/dashboard") if auto-login
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+
+      // Handle error response
+      const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+      
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      // Handle specific field errors if backend returns them
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderError = (field) => {
@@ -111,6 +169,7 @@ export default function Register() {
                     value={formData.firstName}
                     onChange={handleChange}
                     maxLength={50}
+                    disabled={isSubmitting}
                     className={errors.firstName ? "border-destructive" : ""}
                   />
                   {renderError("firstName")}
@@ -123,6 +182,7 @@ export default function Register() {
                     value={formData.lastName}
                     onChange={handleChange}
                     maxLength={50}
+                    disabled={isSubmitting}
                     className={errors.lastName ? "border-destructive" : ""}
                   />
                   {renderError("lastName")}
@@ -138,6 +198,7 @@ export default function Register() {
                   value={formData.email}
                   onChange={handleChange}
                   maxLength={255}
+                  disabled={isSubmitting}
                   className={errors.email ? "border-destructive" : ""}
                 />
                 {renderError("email")}
@@ -152,6 +213,7 @@ export default function Register() {
                   value={formData.phone}
                   onChange={handleChange}
                   maxLength={20}
+                  disabled={isSubmitting}
                   className={errors.phone ? "border-destructive" : ""}
                 />
                 {renderError("phone")}
@@ -165,6 +227,7 @@ export default function Register() {
                   value={formData.password}
                   onChange={handleChange}
                   maxLength={128}
+                  disabled={isSubmitting}
                   className={errors.password ? "border-destructive" : ""}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -181,6 +244,7 @@ export default function Register() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   maxLength={128}
+                  disabled={isSubmitting}
                   className={errors.confirmPassword ? "border-destructive" : ""}
                 />
                 {renderError("confirmPassword")}
@@ -194,8 +258,10 @@ export default function Register() {
                   placeholder="85" 
                   min="0" 
                   max="100" 
+                  step="0.01"
                   value={formData.percentage}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                   className={errors.percentage ? "border-destructive" : ""}
                 />
                 {renderError("percentage")}
@@ -207,7 +273,7 @@ export default function Register() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link to="/login" className="text-primary hover:underline">
+                <Link to="/studentlogin" className="text-primary hover:underline">
                   Sign in
                 </Link>
               </p>

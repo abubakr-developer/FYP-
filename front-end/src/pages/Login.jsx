@@ -43,8 +43,6 @@ export default function Login() {
       return;
     }
 
-    // Note: In a real application, this would call an authentication API
-    // Currently this is a demo without backend authentication
     toast({
       title: "Demo Mode",
       description: `Navigating to ${role} dashboard. Full authentication coming soon!`,

@@ -10,12 +10,16 @@ import Universities from "./pages/Universities";
 import UniversityDetail from "./pages/UniversityDetail";
 import Scholarships from "./pages/Scholarships";
 import Events from "./pages/Events";
-import Login from "./pages/Login";
 import Register from "./pages/Register";
+import RoleSelection from "./pages/RoleSelection";
 import StudentDashboard from "./pages/StudentDashboard";
 import UniversityDashboard from "./pages/UniversityDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import StudentLogin from "./pages/StudentLogin";
+import UniversityLogin from "./pages/UniversityLogin";
+import AdminLogin from "./pages/AdminLogin";
+import UniversityRegister from "./pages/UniversityRegister"; 
 
 const queryClient = new QueryClient();
 
@@ -33,11 +37,16 @@ const App = () => (
           <Route path="/universities/:id" element={<UniversityDetail />} />
           <Route path="/scholarships" element={<Scholarships />} />
           <Route path="/events" element={<Events />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/studentlogin" element={<StudentLogin />} />
+          <Route path="/university-login" element={<UniversityLogin />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/role-selection" element={<RoleSelection />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/university-dashboard" element={<UniversityDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/university-register" element={<UniversityRegister />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -10,7 +10,7 @@ import Universities from "./pages/Universities";
 import UniversityDetail from "./pages/UniversityDetail";
 import Scholarships from "./pages/Scholarships";
 import Events from "./pages/Events";
-import Login from "./pages/Login";
+import StudentLogin from "./pages/";
 import Register from "./pages/Register";
 import StudentDashboard from "./pages/StudentDashboard";
 import UniversityDashboard from "./pages/UniversityDashboard";
@@ -33,7 +33,7 @@ const App = () => (
           <Route path="/universities/:id" element={<UniversityDetail />} />
           <Route path="/scholarships" element={<Scholarships />} />
           <Route path="/events" element={<Events />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/student-login" element={<StudentLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/university-dashboard" element={<UniversityDashboard />} />

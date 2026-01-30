@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import RoleSelection from "@/pages/RoleSelection";
 import { 
   Search, 
   GraduationCap, 
@@ -15,9 +17,11 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const [isRoleSelectionOpen, setIsRoleSelectionOpen] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar onLoginClick={() => setIsRoleSelectionOpen(true)} />
       
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -277,6 +281,12 @@ export default function Home() {
       </section>
 
       <Footer />
+      
+      {/* Role Selection Modal */}
+      <RoleSelection 
+        isOpen={isRoleSelectionOpen} 
+        onClose={() => setIsRoleSelectionOpen(false)} 
+      />
     </div>
   );
 }

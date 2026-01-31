@@ -1,5 +1,29 @@
 import mongoose from "mongoose";
 
+const universitySchema = new mongoose.Schema({
+  institutionName: { type: String, required: true, trim: true },
+  officialEmail: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  contactPerson: { type: String, required: true, trim: true },
+  designation: { type: String, trim: true },
+  phone: { type: String, required: true, trim: true },
+  website: { type: String, trim: true },
+  address: { type: String, trim: true },
+  institutionType: {
+    type: String,
+    enum: ['public', 'private', 'semi-government'],
+    default: 'private',
+    required: true
+  },
+  password: { type: String, required: true },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  createdAt: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+
 const programSchema = new mongoose.Schema({
   programName: { type: String, required: true }, // e.g. "BS Computer Science", "BS-IT", "LLB"
   eligibilityCriteria: { type: Number, required: true, min: 0, max: 100 }, // minimum % required
@@ -7,14 +31,6 @@ const programSchema = new mongoose.Schema({
   duration: { type: String },
   seats: { type: Number },
 });
-
-const universitySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  location: { type: String },
-  description: { type: String },
-  logoUrl: { type: String },
-  programs: [programSchema],
-}, { timestamps: true });
 
 const scholarshipSchema = new mongoose.Schema({
   name: { type: String, required: true }, // e.g., "Merit Scholarship"

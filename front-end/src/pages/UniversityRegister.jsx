@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { GraduationCap, AlertCircle, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Define API base URL (uses .env variable or fallback to localhost)
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export default function UniversityRegister() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,11 +38,14 @@ export default function UniversityRegister() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Basic client-side validation (replace/improve with zod schema later)
+    // Reset previous field-specific errors
+    setErrors({});
+
+    // Basic client-side validation
     const requiredFields = [
       "institutionName",
       "officialEmail",
@@ -67,29 +73,83 @@ export default function UniversityRegister() {
       newErrors.password = "Password must be at least 8 characters long";
     }
 
-    // Optional: add more specific checks (email format, phone regex, etc.)
+    // Optional: more client-side checks (email format, phone, etc.)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.officialEmail && !emailRegex.test(formData.officialEmail)) {
+      newErrors.officialEmail = "Please enter a valid email address";
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setIsSubmitting(false);
       toast({
         title: "Validation Error",
-        description: "Please complete all required fields correctly.",
+        description: "Please fix the errors in the form.",
         variant: "destructive",
       });
       return;
     }
 
-    // Demo mode simulation
-    toast({
-      title: "Demo Mode",
-      description: "University registration simulated. Backend & approval flow coming soon!",
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/university/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    setIsSubmitting(false);
+      // Safely parse the response: if the server returns HTML (e.g., 404 or a redirect page)
+      // avoid calling response.json() directly which would throw the "Unexpected token '<'" error.
+      const contentType = response.headers.get("content-type") || "";
+      let data;
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Expected JSON response but received: ${text.slice(0, 300)}`);
+      }
 
-    // In real app → navigate("/university-pending-approval") or similar
-    // navigate("/university-dashboard");
+      if (!response.ok) {
+        // Show backend validation error (single message or field-specific)
+        if (data.message) {
+          toast({
+            title: "Registration Failed",
+            description: data.message,
+            variant: "destructive",
+          });
+        }
+        // Optional: map field-specific errors if backend sends them
+        if (data.errors) {
+          setErrors(data.errors);
+        }
+        throw new Error(data.message || "Something went wrong");
+      }
+
+      // Success
+      toast({
+        title: "Registration Submitted",
+        description: data.message || "Your institution registration is pending approval.",
+      });
+
+      // Navigate to a pending/confirmation page
+      navigate("/university-pending-approval");
+
+      // Optional: store token if you want to auto-login after approval later
+      // if (data.token) {
+      //   localStorage.setItem("universityToken", data.token);
+      // }
+
+    } catch (error) {
+      console.error("University registration error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to connect to the server. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderError = (field) => {
@@ -228,7 +288,7 @@ export default function UniversityRegister() {
                   className={errors.password ? "border-destructive" : ""}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Minimum 8 characters
+                  Minimum 8 characters with uppercase, lowercase, and number
                 </p>
                 {renderError("password")}
               </div>
@@ -256,7 +316,7 @@ export default function UniversityRegister() {
 
               <p className="text-center text-sm text-muted-foreground mt-4">
                 Already have an account?{" "}
-                <Link to="/login" className="text-primary hover:underline">
+                <Link to="/university-login" className="text-primary hover:underline">
                   Sign in
                 </Link>
               </p>

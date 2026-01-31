@@ -1,4 +1,200 @@
 import University from "../models/university.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+// Helper: fallback upload handler — uses local multer `req.files` paths when Cloudinary not configured
+const uploadToCloudinary = async (file, folder = 'misc') => {
+  // Allow passing either multer file object or arrays from req.files
+  if (!file) return null;
+
+  // If an array was passed (e.g. req.files.file), take the first
+  const f = Array.isArray(file) ? file[0] : file;
+
+  // multer.diskStorage gives `path` on the file object (or use `filename` + folder)
+  if (f.path) {
+    // Return a URL path that Express static middleware can serve (`/uploads/...`)
+    return `/${f.path.replace(/\\/g, '/')}`;
+  }
+
+  // If only `filename` and destination are available
+  if (f.filename && f.destination) {
+    const p = `${f.destination.replace(/\\/g, '/')}/${f.filename}`.replace(/\/+/g, '/');
+    return `/${p}`;
+  }
+
+  // No recognized file info — return null rather than throwing to avoid crashing
+  return null;
+};
+
+export const registerUniversity = async (req, res) => {
+  try {
+    // Debug: Log incoming data
+    console.log("University registration - req.body:", req.body);
+
+    // Check if body exists
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body is missing or empty",
+      });
+    }
+
+    // Destructure fields (matching frontend)
+    const {
+      institutionName,
+      officialEmail,
+      contactPerson,
+      designation,
+      phone,
+      website,
+      address,
+      institutionType,
+      password,
+      confirmPassword,
+    } = req.body;
+
+    // Required fields
+    if (!institutionName || !officialEmail || !contactPerson || !phone || !password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided (institutionName, officialEmail, contactPerson, phone, password, confirmPassword)",
+      });
+    }
+
+    // Password match
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    // Password strength (same as student)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters with uppercase, lowercase, and number",
+      });
+    }
+
+    // Email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(officialEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid official email format",
+      });
+    }
+
+    // Optional: stricter check for official/academic email (e.g. .edu.pk)
+    if (!officialEmail.toLowerCase().endsWith('.edu.pk') && !officialEmail.toLowerCase().includes('university')) {
+      // This is optional – many real institutions use gmail/outlook too
+      // You can make it warning instead of error
+    }
+
+    // Phone length (basic)
+    if (phone.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number should be at least 10 characters",
+      });
+    }
+
+    // Institution type validation
+    const validTypes = ['public', 'private', 'semi-government'];
+    if (!validTypes.includes(institutionType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid institution type. Allowed: public, private, semi-government",
+      });
+    }
+
+    // Check email uniqueness
+    const existingUniversity = await University.findOne({ officialEmail: officialEmail.toLowerCase() });
+    if (existingUniversity) {
+      return res.status(400).json({
+        success: false,
+        message: "This official email is already registered",
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password.trim(), 10);
+
+    // Create university document (starts as pending)
+    const university = new University({
+      institutionName: institutionName.trim(),
+      officialEmail: officialEmail.toLowerCase().trim(),
+      contactPerson: contactPerson.trim(),
+      designation: designation ? designation.trim() : null,
+      phone: phone.trim(),
+      website: website ? website.trim() : null,
+      address: address ? address.trim() : null,
+      institutionType,
+      password: hashedPassword,
+      status: 'pending', // ← important – real flow needs admin approval
+    });
+
+    await university.save();
+
+    // JWT – optional (you can skip token for universities or issue temporary access)
+    // Many platforms give universities a "pending" dashboard instead of immediate login
+    let token = null;
+    if (process.env.JWT_SECRET_KEY) {
+      token = jwt.sign(
+        { id: university._id, role: 'university', status: university.status },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: "24h" }
+      );
+    } else {
+      console.warn("JWT_SECRET_KEY not set – no token generated");
+    }
+
+    // Response (do NOT send password or full sensitive data)
+    return res.status(201).json({
+      success: true,
+      university: {
+        id: university._id,
+        institutionName: university.institutionName,
+        officialEmail: university.officialEmail,
+        contactPerson: university.contactPerson,
+        phone: university.phone,
+        institutionType: university.institutionType,
+        status: university.status,
+      },
+      token, // optional – can be null or omitted
+      message: "University registration submitted successfully. Your account is pending approval.",
+    });
+
+  } catch (error) {
+    console.error("University Registration Error:", {
+      message: error.message,
+      stack: error.stack,
+      body: req.body,
+    });
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: Object.values(error.errors).map(e => e.message).join(", "),
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during university registration",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
 
 // Add Course/Program (with admission criteria)
 export const addProgram = async (req, res) => {
@@ -68,7 +264,9 @@ export const addScholarship = async (req, res) => {
       return res.status(404).json({ message: "University not found.", success: false });
     }
 
-    const documentUrl = await uploadToCloudinary(req.file, 'scholarships');
+    // Support multer `.files` structure: prefer `file` field, fall back to `image`.
+    const scholarshipFile = (req.files && (req.files.file?.[0] || req.files.image?.[0])) || null;
+    const documentUrl = await uploadToCloudinary(scholarshipFile, 'scholarships');
 
     university.scholarships.push({
       name,
@@ -125,7 +323,9 @@ export const addEvent = async (req, res) => {
       return res.status(404).json({ message: "University not found.", success: false });
     }
 
-    const posterUrl = await uploadToCloudinary(req.file, 'events');
+    // Support multer `.files` structure: prefer `image` field, fall back to `file`.
+    const eventFile = (req.files && (req.files.image?.[0] || req.files.file?.[0])) || null;
+    const posterUrl = await uploadToCloudinary(eventFile, 'events');
 
     university.events.push({
       title,

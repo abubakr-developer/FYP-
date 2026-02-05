@@ -1,198 +1,111 @@
 import University from "../models/university.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import User from "../models/user.js";
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-// Helper: fallback upload handler — uses local multer `req.files` paths when Cloudinary not configured
-const uploadToCloudinary = async (file, folder = 'misc') => {
-  // Allow passing either multer file object or arrays from req.files
-  if (!file) return null;
-
-  // If an array was passed (e.g. req.files.file), take the first
-  const f = Array.isArray(file) ? file[0] : file;
-
-  // multer.diskStorage gives `path` on the file object (or use `filename` + folder)
-  if (f.path) {
-    // Return a URL path that Express static middleware can serve (`/uploads/...`)
-    return `/${f.path.replace(/\\/g, '/')}`;
-  }
-
-  // If only `filename` and destination are available
-  if (f.filename && f.destination) {
-    const p = `${f.destination.replace(/\\/g, '/')}/${f.filename}`.replace(/\/+/g, '/');
-    return `/${p}`;
-  }
-
-  // No recognized file info — return null rather than throwing to avoid crashing
-  return null;
-};
-
+// University Registration
 export const registerUniversity = async (req, res) => {
   try {
-    // Debug: Log incoming data
-    console.log("University registration - req.body:", req.body);
+    const { institutionName, officialEmail, contactPerson, phone, password, designation, website, address, institutionType } = req.body;
 
-    // Check if body exists
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Request body is missing or empty",
-      });
+    if (!institutionName || !officialEmail || !contactPerson || !phone || !password) {
+      return res.status(400).json({ message: "Required fields missing", success: false });
     }
 
-    // Destructure fields (matching frontend)
-    const {
+    const existingUni = await University.findOne({ officialEmail: officialEmail.toLowerCase() });
+    const existingUser = await User.findOne({ email: officialEmail.toLowerCase() });
+    if (existingUni || existingUser) {
+      return res.status(400).json({ message: "Email already registered", success: false });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const uni = new University({
       institutionName,
-      officialEmail,
+      officialEmail: officialEmail.toLowerCase(),
       contactPerson,
       designation,
       phone,
       website,
       address,
       institutionType,
-      password,
-      confirmPassword,
-    } = req.body;
-
-    // Required fields
-    if (!institutionName || !officialEmail || !contactPerson || !phone || !password || !confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "All required fields must be provided (institutionName, officialEmail, contactPerson, phone, password, confirmPassword)",
-      });
-    }
-
-    // Password match
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Passwords do not match",
-      });
-    }
-
-    // Password strength (same as student)
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 8 characters with uppercase, lowercase, and number",
-      });
-    }
-
-    // Email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(officialEmail)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid official email format",
-      });
-    }
-
-    // Optional: stricter check for official/academic email (e.g. .edu.pk)
-    if (!officialEmail.toLowerCase().endsWith('.edu.pk') && !officialEmail.toLowerCase().includes('university')) {
-      // This is optional – many real institutions use gmail/outlook too
-      // You can make it warning instead of error
-    }
-
-    // Phone length (basic)
-    if (phone.trim().length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone number should be at least 10 characters",
-      });
-    }
-
-    // Institution type validation
-    const validTypes = ['public', 'private', 'semi-government'];
-    if (!validTypes.includes(institutionType)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid institution type. Allowed: public, private, semi-government",
-      });
-    }
-
-    // Check email uniqueness
-    const existingUniversity = await University.findOne({ officialEmail: officialEmail.toLowerCase() });
-    if (existingUniversity) {
-      return res.status(400).json({
-        success: false,
-        message: "This official email is already registered",
-      });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password.trim(), 10);
-
-    // Create university document (starts as pending)
-    const university = new University({
-      institutionName: institutionName.trim(),
-      officialEmail: officialEmail.toLowerCase().trim(),
-      contactPerson: contactPerson.trim(),
-      designation: designation ? designation.trim() : null,
-      phone: phone.trim(),
-      website: website ? website.trim() : null,
-      address: address ? address.trim() : null,
-      institutionType,
       password: hashedPassword,
-      status: 'pending', // ← important – real flow needs admin approval
+      status: 'pending'
     });
 
-    await university.save();
+    await uni.save();
 
-    // JWT – optional (you can skip token for universities or issue temporary access)
-    // Many platforms give universities a "pending" dashboard instead of immediate login
-    let token = null;
-    if (process.env.JWT_SECRET_KEY) {
-      token = jwt.sign(
-        { id: university._id, role: 'university', status: university.status },
-        process.env.JWT_SECRET_KEY,
-        { expiresIn: "24h" }
-      );
-    } else {
-      console.warn("JWT_SECRET_KEY not set – no token generated");
+    // Create a user account for university admin
+    const [firstName, ...remaining] = (contactPerson || '').trim().split(/\s+/);
+    const lastName = remaining.length ? remaining.join(' ') : '';
+
+    const adminUser = new User({
+      firstName: firstName || 'Admin',
+      lastName: lastName || '',
+      email: officialEmail.toLowerCase(),
+      phone: phone || '',
+      password: hashedPassword,
+      role: 'universityAdmin'
+    });
+
+    try {
+      await adminUser.save();
+    } catch (userErr) {
+      console.error('Error creating admin user:', userErr);
+      if (userErr.name === 'ValidationError') {
+        const errors = Object.values(userErr.errors).map(e => e.message).join(', ');
+        return res.status(400).json({ message: `Invalid admin user data: ${errors}`, success: false, errors: userErr.errors });
+      }
+      if (userErr.code === 11000) {
+        return res.status(400).json({ message: 'Email or phone already registered', success: false });
+      }
+      return res.status(500).json({ message: 'Failed to create admin user', success: false });
     }
 
-    // Response (do NOT send password or full sensitive data)
-    return res.status(201).json({
-      success: true,
-      university: {
-        id: university._id,
-        institutionName: university.institutionName,
-        officialEmail: university.officialEmail,
-        contactPerson: university.contactPerson,
-        phone: university.phone,
-        institutionType: university.institutionType,
-        status: university.status,
-      },
-      token, // optional – can be null or omitted
-      message: "University registration submitted successfully. Your account is pending approval.",
-    });
+    // Link admin user to university
+    uni.adminId = adminUser._id;
+    await uni.save();
 
+    return res.status(201).json({ message: "University registration submitted", success: true, university: { id: uni._id, status: uni.status } });
   } catch (error) {
-    console.error("University Registration Error:", {
-      message: error.message,
-      stack: error.stack,
-      body: req.body,
-    });
-
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        success: false,
-        message: Object.values(error.errors).map(e => e.message).join(", "),
-      });
+    console.error("Error registering university:", error);
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ message: `Invalid university data: ${errors}`, success: false, errors: error.errors });
     }
-
     if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered",
-      });
+      return res.status(400).json({ message: 'University email already registered', success: false });
+    }
+    return res.status(500).json({ message: "Internal server error", success: false });
+  }
+};
+
+// University login
+export const loginUniversity = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required", success: false });
     }
 
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error during university registration",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
+    const user = await User.findOne({ email: email.toLowerCase(), role: 'universityAdmin' });
+    if (!user) return res.status(400).json({ message: "Admin user not found", success: false });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(400).json({ message: "Invalid password", success: false });
+
+    // Check university approval status
+    const uni = await University.findOne({ adminId: user._id });
+    if (!uni) return res.status(400).json({ message: "Associated university not found", success: false });
+    if (uni.status !== 'approved') return res.status(403).json({ message: "University not approved yet", success: false });
+
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY);
+    res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "strict" });
+
+    return res.status(200).json({ message: "Login successful", success: true, token });
+  } catch (error) {
+    console.error("University login error:", error);
+    return res.status(500).json({ message: "Internal server error", success: false });
   }
 };
 
@@ -205,7 +118,7 @@ export const addProgram = async (req, res) => {
       return res.status(400).json({ message: "Program name and eligibility criteria required.", success: false });
     }
 
-    const university = await University.findOne({ adminId: req.user.id });
+    const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
       return res.status(404).json({ message: "University not found.", success: false });
     }
@@ -234,7 +147,7 @@ export const addProgram = async (req, res) => {
 // Get All Programs
 export const getPrograms = async (req, res) => {
   try {
-    const university = await University.findOne({ adminId: req.user.id });
+    const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
       return res.status(404).json({ message: "University not found.", success: false });
     }
@@ -259,14 +172,12 @@ export const addScholarship = async (req, res) => {
       return res.status(400).json({ message: "Scholarship name required.", success: false });
     }
 
-    const university = await University.findOne({ adminId: req.user.id });
+    const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
       return res.status(404).json({ message: "University not found.", success: false });
     }
 
-    // Support multer `.files` structure: prefer `file` field, fall back to `image`.
-    const scholarshipFile = (req.files && (req.files.file?.[0] || req.files.image?.[0])) || null;
-    const documentUrl = await uploadToCloudinary(scholarshipFile, 'scholarships');
+    const documentUrl = req.file?.path || (typeof uploadToCloudinary === 'function' ? await uploadToCloudinary(req.file, 'scholarships') : null);
 
     university.scholarships.push({
       name,
@@ -293,7 +204,7 @@ export const addScholarship = async (req, res) => {
 // Get All Scholarships
 export const getScholarships = async (req, res) => {
   try {
-    const university = await University.findOne({ adminId: req.user.id });
+    const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
       return res.status(404).json({ message: "University not found.", success: false });
     }
@@ -318,14 +229,12 @@ export const addEvent = async (req, res) => {
       return res.status(400).json({ message: "Title and date required.", success: false });
     }
 
-    const university = await University.findOne({ adminId: req.user.id });
+    const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
       return res.status(404).json({ message: "University not found.", success: false });
     }
 
-    // Support multer `.files` structure: prefer `image` field, fall back to `file`.
-    const eventFile = (req.files && (req.files.image?.[0] || req.files.file?.[0])) || null;
-    const posterUrl = await uploadToCloudinary(eventFile, 'events');
+    const posterUrl = req.file?.path || (typeof uploadToCloudinary === 'function' ? await uploadToCloudinary(req.file, 'events') : null);
 
     university.events.push({
       title,
@@ -351,7 +260,7 @@ export const addEvent = async (req, res) => {
 // Get All Events
 export const getEvents = async (req, res) => {
   try {
-    const university = await University.findOne({ adminId: req.user.id });
+    const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
       return res.status(404).json({ message: "University not found.", success: false });
     }

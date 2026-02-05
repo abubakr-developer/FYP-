@@ -2,11 +2,12 @@ import express from 'express';
 import { isUniversityAdmin } from '../middlewaee/isUniversityAdmin.js';
 import { registerUploads } from '../middlewaee/multer.js';
 import userAuth from '../middlewaee/userAuth.js';
-import {registerUniversity,  addProgram, getPrograms, addScholarship, getScholarships, addEvent, getEvents } from '../controller/universityController.js';
+import {loginUniversity ,registerUniversity,  addProgram, getPrograms, addScholarship, getScholarships, addEvent, getEvents } from '../controller/universityController.js';
 
 const universityRouter = express.Router();
 
 universityRouter.post('/register', registerUniversity);
+universityRouter.post('/login', loginUniversity)
 
 universityRouter.post('/programs', userAuth, isUniversityAdmin, addProgram);
 universityRouter.get('/programs', userAuth, isUniversityAdmin, getPrograms);

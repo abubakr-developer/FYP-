@@ -3,24 +3,31 @@ import mongoose from "mongoose";
 const universitySchema = new mongoose.Schema({
   institutionName: { type: String, required: true, trim: true },
   officialEmail: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  contactPerson: { type: String, required: true, trim: true },
-  designation: { type: String, trim: true },
-  phone: { type: String, required: true, trim: true },
-  website: { type: String, trim: true },
-  address: { type: String, trim: true },
-  institutionType: {
-    type: String,
-    enum: ['public', 'private', 'semi-government'],
-    default: 'private',
-    required: true
+  contactPerson: { type: String, required: true },
+  designation: { type: String },
+  phone: { type: String, required: true },
+  website: { type: String },
+  address: { type: String },
+  institutionType: { 
+    type: String, 
+    enum: ['public', 'private', 'semi-government'], 
+    default: 'private' 
   },
-  password: { type: String, required: true },
+  password: { type: String, required: true }, // ← hashed!
+  adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    default: 'pending',
+    required: true
   },
-  createdAt: { type: Date, default: Date.now }
+  
+  approvedAt: { type: Date },
+  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // optional: track who approved
+  rejectedAt: { type: Date, default: null },
+  rejectionReason: { type: String, default: null },
+
 }, { timestamps: true });
 
 

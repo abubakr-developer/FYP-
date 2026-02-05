@@ -1,5 +1,116 @@
 import User from '../models/user.js';
 import University from '../models/university.js';
+import { sendApprovalEmail, sendRejectionEmail } from '../utils/sendEmail.js';
+
+export const getPendingUniversities = async (req, res) => {
+  try {
+    const pending = await University.find({ status: 'pending' })
+      .select('-password -__v') // don't send password
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json(pending);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error - could not load pending universities" });
+  }
+};
+
+export const approveUniversity = async (req, res) => {
+  try {
+    const { universityId } = req.params;
+
+    const university = await University.findById(universityId);
+    if (!university) {
+      return res.status(404).json({ message: "University not found" });
+    }
+
+    if (university.status !== "pending") {
+      return res.status(400).json({ 
+        message: `This university is already ${university.status}` 
+      });
+    }
+
+    university.status = "approved";
+    university.approvedAt = new Date();
+    university.approvedBy = req.user?._id || null;
+
+    await university.save();
+
+    // Try to send approval email
+    let emailStatus = "not attempted";
+    try {
+      const sent = await sendApprovalEmail(university);
+      emailStatus = sent ? "sent" : "failed";
+    } catch (emailErr) {
+      console.error("Email sending failed:", emailErr);
+      emailStatus = "failed";
+    }
+
+    res.status(200).json({
+      message: "University approved successfully",
+      emailStatus,
+      university: {
+        _id: university._id,
+        institutionName: university.institutionName,
+        officialEmail: university.officialEmail,
+        status: university.status
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error during approval" });
+  }
+};
+
+// Reject university registration
+export const rejectUniversity = async (req, res) => {
+  try {
+    const { universityId } = req.params;
+    const { reason } = req.body || {};
+
+    const university = await University.findById(universityId);
+    if (!university) {
+      return res.status(404).json({ message: "University not found" });
+    }
+
+    if (university.status !== "pending") {
+      return res.status(400).json({ 
+        message: `This university is already ${university.status}` 
+      });
+    }
+
+    university.status = "rejected";
+    university.rejectedAt = new Date();
+    university.rejectionReason = reason || null;
+
+    await university.save();
+
+    // Try to send rejection email
+    let emailStatus = "not attempted";
+    try {
+      const sent = await sendRejectionEmail(university, reason);
+      emailStatus = sent ? "sent" : "failed";
+    } catch (emailErr) {
+      console.error("Rejection email sending failed:", emailErr);
+      emailStatus = "failed";
+    }
+
+    res.status(200).json({
+      message: "University rejected",
+      emailStatus,
+      university: {
+        _id: university._id,
+        institutionName: university.institutionName,
+        officialEmail: university.officialEmail,
+        status: university.status
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error during rejection" });
+  }
+};
 
 // Get Platform Analytics
 export const getAnalytics = async (req, res) => {

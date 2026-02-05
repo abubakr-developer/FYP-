@@ -10,16 +10,16 @@ import Universities from "./pages/Universities";
 import UniversityDetail from "./pages/UniversityDetail";
 import Scholarships from "./pages/Scholarships";
 import Events from "./pages/Events";
-import Register from "./pages/Register";
+import Register from "./pages/Student/Register";
 import RoleSelection from "./pages/RoleSelection";
 import StudentDashboard from "./pages/StudentDashboard";
 import UniversityDashboard from "./pages/UniversityDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
-import StudentLogin from "./pages/StudentLogin";
-import UniversityLogin from "./pages/UniversityLogin";
-import AdminLogin from "./pages/AdminLogin";
-import UniversityRegister from "./pages/UniversityRegister"; 
+import StudentLogin from "./pages/Student/StudentLogin";
+import UniversityLogin from "./pages/University/UniversityLogin";
+import AdminLogin from "./pages/Admin/AdminLogin";
+import UniversityRegister from "./pages/University/UniversityRegister"; 
 
 const queryClient = new QueryClient();
 
@@ -30,7 +30,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />}  />
           <Route path="/features" element={<Features />} />
           <Route path="/about" element={<About />} />
           <Route path="/universities" element={<Universities />} />

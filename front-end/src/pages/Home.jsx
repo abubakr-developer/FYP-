@@ -25,6 +25,7 @@ export default function Home() {
       
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
+        
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-background -z-10" />
         <div className="container max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">

@@ -256,7 +256,7 @@ export default function UniversityRegister() {
 
               <p className="text-center text-sm text-muted-foreground mt-4">
                 Already have an account?{" "}
-                <Link to="/login" className="text-primary hover:underline">
+                <Link to="/university-login" className="text-primary hover:underline">
                   Sign in
                 </Link>
               </p>

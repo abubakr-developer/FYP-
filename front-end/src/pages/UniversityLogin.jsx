@@ -8,13 +8,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, AlertCircle, Info, ArrowLeft } from "lucide-react";
 import { loginSchema, validateForm } from "@/lib/validation";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
 export default function UniversityLogin() {
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Define API base URL from env or fallback to localhost
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -25,31 +30,65 @@ export default function UniversityLogin() {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setIsSubmitting(true);
-    
+
     const result = validateForm(loginSchema, formData);
-    
+
     if (!result.success) {
       setErrors(result.errors);
       setIsSubmitting(false);
       toast({
         title: "Validation Error",
-        description: "Please enter valid credentials.",
+        description: "Please fix the errors in the form.",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Demo Mode",
-      description: "Navigating to University dashboard. Full authentication coming soon!",
-    });
-    
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const response = await axios.post(`${API_URL}/api/university/login`, {
+        email: formData.email.trim(),
+        password: formData.password,
+      }, { withCredentials: true });
+
+      toast({
+        title: "Login Successful",
+        description: response.data.message || "Welcome to the University Portal",
+      });
+
+      // Example: store token if returned
+      // localStorage.setItem("university_token", response.data.token);
+
       navigate("/university-dashboard");
-    }, 800);
+
+    } catch (error) {
+      console.error("Login error:", error);
+
+      let errorMessage = "Something went wrong. Please try again.";
+
+      if (error.response) {
+        const { status, data } = error.response;
+        if (status === 401) {
+          errorMessage = "Invalid email or password.";
+        } else if (status === 400 && data?.errors) {
+          setErrors(data.errors);
+          errorMessage = "Please check the highlighted fields.";
+        } else if (data?.message) {
+          errorMessage = data.message;
+        }
+      } else if (error.request) {
+        errorMessage = "Cannot reach the server. Check your connection or server status.";
+      }
+
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderError = (field) => {
@@ -65,16 +104,14 @@ export default function UniversityLogin() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-50 via-pink-50 to-background dark:from-purple-950/20 dark:via-pink-950/10 dark:to-background">
       <div className="w-full max-w-md">
-        {/* Back Button */}
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="inline-flex items-center space-x-2 mb-6 text-sm text-muted-foreground hover:text-primary transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Home</span>
         </Link>
 
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 mb-4">
             <Building2 className="h-8 w-8 text-white" />
@@ -85,15 +122,13 @@ export default function UniversityLogin() {
           </p>
         </div>
 
-        {/* Demo Alert */}
         <Alert className="mb-6 border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/20">
           <Info className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           <AlertDescription className="text-sm text-purple-900 dark:text-purple-200">
-            <strong>Demo Mode:</strong> Enter any email and password to access the dashboard.
+            <strong>Note:</strong> Authentication is connected to the backend.
           </AlertDescription>
         </Alert>
 
-        {/* Login Card */}
         <Card className="border-2 shadow-xl">
           <CardHeader>
             <CardTitle>Institution Login</CardTitle>
@@ -101,17 +136,18 @@ export default function UniversityLogin() {
               Access your university administration panel
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="university-email">Institution Email</Label>
-              <Input 
-                id="university-email" 
-                type="email" 
+              <Input
+                id="university-email"
+                type="email"
                 placeholder="admin@university.edu"
                 value={formData.email}
                 onChange={handleChange}
                 maxLength={255}
                 className={errors.email ? "border-destructive" : ""}
+                disabled={isSubmitting}
               />
               {renderError("email")}
             </div>
@@ -123,57 +159,42 @@ export default function UniversityLogin() {
                   Forgot?
                 </Link>
               </div>
-              <Input 
-                id="university-password" 
+              <Input
+                id="university-password"
                 type="password"
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
                 maxLength={128}
                 className={errors.password ? "border-destructive" : ""}
+                disabled={isSubmitting}
               />
               {renderError("password")}
             </div>
 
-            <Button 
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" 
+            <Button
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               onClick={handleLogin}
               disabled={isSubmitting}
             >
               {isSubmitting ? "Signing in..." : "Sign In to Portal"}
             </Button>
 
-            <div className="relative py-2">
+            <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  or
+                  Need Help?
                 </span>
               </div>
             </div>
 
-            <div className="bg-muted/50 p-4 rounded-lg text-sm space-y-3">
-              <p className="font-semibold">New University / Institution?</p>
+            <div className="bg-muted/50 p-4 rounded-lg text-sm">
+              <p className="font-semibold mb-2">University Registration</p>
               <p className="text-muted-foreground">
-                Register your institution to list programs, manage admissions, and connect with students.
-              </p>
-              <Button 
-                variant="outline" 
-                className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-300 dark:hover:bg-purple-950/30"
-                asChild
-              >
-                <Link to="/university-register">
-                  Register Your Institution
-                </Link>
-              </Button>
-            </div>
-
-            {/* Optional: keep this if you still want the email contact fallback */}
-            <div className="text-center text-xs text-muted-foreground">
-              <p>
-                Facing issues? Contact support at{" "}
+                To register your institution, please contact our admin team at{" "}
                 <a href="mailto:support@unisphere.edu" className="text-primary hover:underline">
                   support@unisphere.edu
                 </a>
@@ -182,7 +203,6 @@ export default function UniversityLogin() {
           </CardContent>
         </Card>
 
-        {/* Additional Links */}
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>
             Looking for a different portal?{" "}

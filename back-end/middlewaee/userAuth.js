@@ -15,7 +15,8 @@ const userAuth = async (req, res, next) => {
         const tokenDecode = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
         if (tokenDecode.id) {
-            req.user = { _id: tokenDecode.id };
+            // attach id and role (if present) for downstream middlewares
+            req.user = { _id: tokenDecode.id, role: tokenDecode.role };
             next(); // Proceed to the next middleware/route
         } else {
             return res.status(401).json({ 

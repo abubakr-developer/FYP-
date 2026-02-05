@@ -8,6 +8,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, AlertCircle, Info, ArrowLeft, Lock } from "lucide-react";
 import { loginSchema, validateForm } from "@/lib/validation";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -25,11 +28,11 @@ export default function AdminLogin() {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setIsSubmitting(true);
-    
+
     const result = validateForm(loginSchema, formData);
-    
+
     if (!result.success) {
       setErrors(result.errors);
       setIsSubmitting(false);
@@ -41,15 +44,45 @@ export default function AdminLogin() {
       return;
     }
 
-    toast({
-      title: "Demo Mode",
-      description: "Navigating to Admin dashboard. Full authentication coming soon!",
-    });
-    
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/auth/login`,
+        { email: formData.email, password: formData.password },
+        { withCredentials: true }
+      );
+
+      // Backend returns user + token and sets cookie. Ensure the logged-in user is a super admin
+      const user = response.data?.user;
+      if (!user) {
+        throw new Error("Invalid server response: missing user info");
+      }
+
+      if (user.role !== 'superAdmin') {
+        toast({
+          title: "Unauthorized",
+          description: "This account is not a super admin.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      toast({
+        title: "Welcome",
+        description: "Logged in as Super Admin",
+      });
+
       navigate("/admin-dashboard");
-    }, 800);
+    } catch (error) {
+      console.error("Admin login error:", error);
+      toast({
+        title: "Login Error",
+        description: error.response?.data?.message || error.message || "Failed to sign in",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderError = (field) => {
@@ -156,7 +189,7 @@ export default function AdminLogin() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-background px-2 text-muted-foreground">
                   Security Notice
                 </span>
               </div>

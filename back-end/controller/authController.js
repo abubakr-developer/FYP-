@@ -115,7 +115,8 @@ export const register = async (req, res) => {
     }
 
     // Create JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+    // Include role in token to allow role-based middleware to work without extra DB lookups
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, {
       expiresIn: "24h", // Extended to 24h for better UX
     });
 
@@ -165,7 +166,11 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
+    // Log incoming login attempt (mask password for security)
+    console.log("Login attempt:", { email: req.body?.email });
+
     if (!req.body || Object.keys(req.body).length === 0) {
+      console.error("Login Error: missing body", { body: req.body });
       return res.status(400).json({
         success: false,
         message: "Request body is missing or empty",
@@ -174,39 +179,66 @@ export const login = async (req, res) => {
 
     const { email, password } = req.body;
 
-    if (!email) throw new Error("Email is required");
-    if (!password) throw new Error("Password is required");
+    if (!email) {
+      console.error("Login Error: missing email", { body: req.body });
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+    if (!password) {
+      console.error("Login Error: missing password", { email });
+      return res.status(400).json({ success: false, message: "Password is required" });
+    }
 
-    const user = await User.findOne({ email });
-    if (!user) throw new Error("User not found");
+    // Normalize email lookup
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      console.error("Login Error: user not found", { email });
+      return res.status(400).json({ success: false, message: "User not found" });
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) throw new Error("Invalid password");
+    if (!match) {
+      console.error("Login Error: invalid password", { email });
+      return res.status(400).json({ success: false, message: "Invalid password" });
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    user.password = hashedPassword;
-    await user.save();
-
+    // Include role in token to allow role-based middleware checks
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET_KEY
     );
 
-  res.cookie("token", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
-});
-
+    // Set auth cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
+    });
 
     return res.status(200).json({ success: true, user, token });
 
   } catch (error) {
-    return res.status(400).json({ success: false, message: error.message });
+    console.error("Login Error:", { message: error.message, stack: error.stack });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-   const otpStorage = new Map();
+// Logout: clears the auth cookie
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    });
+    return res.status(200).json({ success: true, message: "Logged out" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ success: false, message: "Logout failed" });
+  }
+};
+
+const otpStorage = new Map();
+
 export const forgetPassword = async (req, res) => {
   try {
        
@@ -293,16 +325,6 @@ export const forgetPassword = async (req, res) => {
   }
 };
 
-function generateOTP(lenght){
-  const digits = '0123456789';
-  let otp = '';
-  for (let i ; i < lenght; i++){
-    otp =+ digits[Math.floor(Math.random() * 10)];
-  }
-  return otp;
-}
-const otp = generateOTP(6);
-console.log(otp);
 
 export const resetPassword = async (req, res) => {
   try {

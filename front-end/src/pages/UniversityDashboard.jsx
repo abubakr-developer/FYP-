@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
+import UniversityNavbar from "@/components/UniversityNavbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
 
 export default function UniversityDashboard() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("profile");
   const [profileData, setProfileData] = useState({ name: "", city: "", description: "" });
   const [programData, setProgramData] = useState({ name: "", duration: "" });
   const [scholarshipData, setScholarshipData] = useState({ title: "", amount: "", deadline: "" });
@@ -66,7 +67,7 @@ export default function UniversityDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <UniversityNavbar setActiveTab={setActiveTab} />
       <section className="py-8 px-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background">
         <div className="container max-w-6xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">University Admin Dashboard</h1>
@@ -77,9 +78,9 @@ export default function UniversityDashboard() {
         <div className="container max-w-6xl mx-auto">
           <Alert className="mb-6 border-primary/20 bg-primary/5">
             <Info className="h-4 w-4" />
-            <AlertDescription>
+            {/* <AlertDescription>
               <strong>Demo Mode:</strong> This dashboard shows sample statistics. Enable backend to manage real data and track student engagement.
-            </AlertDescription>
+            </AlertDescription> */}
           </Alert>
 
           <div className="grid md:grid-cols-4 gap-6 mb-8">
@@ -129,7 +130,7 @@ export default function UniversityDashboard() {
             </Card>
           </div>
 
-          <Tabs defaultValue="profile" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="programs">Programs</TabsTrigger>
@@ -139,6 +140,7 @@ export default function UniversityDashboard() {
             </TabsList>
 
             <TabsContent value="profile">
+               <div id="profile">
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle>University Information</CardTitle>
@@ -193,9 +195,11 @@ export default function UniversityDashboard() {
                   </Button>
                 </CardContent>
               </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="programs">
+              <div id="programs">
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle>Add Program</CardTitle>
@@ -238,9 +242,11 @@ export default function UniversityDashboard() {
                   </Button>
                 </CardContent>
               </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="scholarships">
+              <div id="scholarships">
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle>Add Scholarship</CardTitle>
@@ -295,10 +301,11 @@ export default function UniversityDashboard() {
                   </Button>
                 </CardContent>
               </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="events">
-              <Card className="border-2">
+              <div id="events">              <Card className="border-2">
                 <CardHeader>
                   <CardTitle>Create Event</CardTitle>
                 </CardHeader>
@@ -350,9 +357,11 @@ export default function UniversityDashboard() {
                   </Button>
                 </CardContent>
               </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="news">
+              <div id="news">
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle>Post News</CardTitle>
@@ -394,6 +403,7 @@ export default function UniversityDashboard() {
                   </Button>
                 </CardContent>
               </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

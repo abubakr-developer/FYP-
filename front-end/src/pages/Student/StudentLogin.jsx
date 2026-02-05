@@ -9,47 +9,99 @@ import { GraduationCap, AlertCircle, Info, ArrowLeft } from "lucide-react";
 import { loginSchema, validateForm } from "@/lib/validation";
 import { useToast } from "@/hooks/use-toast";
 
+// API base URL (configurable via .env)
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export default function StudentLogin() {
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    const field = id.split("-").pop();
+    const field = id.split("-").pop(); // student-email → email
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setIsSubmitting(true);
-    
+    setErrors({}); // clear previous field errors
+
+    // Client-side validation
     const result = validateForm(loginSchema, formData);
-    
+
     if (!result.success) {
       setErrors(result.errors);
       setIsSubmitting(false);
       toast({
         title: "Validation Error",
-        description: "Please enter valid credentials.",
+        description: "Please enter valid email and password.",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Demo Mode",
-      description: "Navigating to Student dashboard. Full authentication coming soon!",
-    });
-    
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+          role: "student", // optional - helps backend know which collection to check
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Show backend error message (wrong credentials, user not found, etc.)
+        toast({
+          title: "Login Failed",
+          description: data.message || "Invalid email or password",
+          variant: "destructive",
+        });
+        throw new Error(data.message || "Authentication failed");
+      }
+
+      // Success - store token and user info
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        // Optional: store more user data if returned
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+      }
+
+      toast({
+        title: "Login Successful",
+        description: "Welcome back! Redirecting to your dashboard...",
+      });
+
+      // Redirect after short delay for better UX
     setTimeout(() => {
       setIsSubmitting(false);
       navigate("/student-dashboard");
     }, 800);
+
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to connect to the server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderError = (field) => {
@@ -85,11 +137,11 @@ export default function StudentLogin() {
           </p>
         </div>
 
-        {/* Demo Alert */}
+        {/* Demo Alert - can be removed later */}
         <Alert className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/20">
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
-            <strong>Demo Mode:</strong> Enter any email and password to access the dashboard.
+            Enter your registered email and password to sign in.
           </AlertDescription>
         </Alert>
 

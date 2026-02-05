@@ -133,12 +133,12 @@ export default function UniversityRegister() {
       });
 
       // Navigate to a pending/confirmation page
-      navigate("/university-pending-approval");
+      navigate("/university-login");
 
       // Optional: store token if you want to auto-login after approval later
-      // if (data.token) {
-      //   localStorage.setItem("universityToken", data.token);
-      // }
+      if (data.token) {
+        localStorage.setItem("universityToken", data.token);
+      }
 
     } catch (error) {
       console.error("University registration error:", error);

@@ -5,14 +5,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('Connected to DB');
 
     const email = 'superadmin@unisphere.com';
     const password = 'admin123'; // Change in production!
 
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
       console.log('Super Admin already exists');
       process.exit(0);
@@ -21,10 +21,10 @@ mongoose.connect(process.env.MONGO_URI)
     const hashPassword = await bcrypt.hash(password, 10);
 
     const superAdmin = new User({
-      name: 'Super Admin',
-      phoneNo: '0000000000',
-      country: 'Pakistan',
-      email,
+      firstName: 'Super',
+      lastName: 'Admin',
+      email: email.toLowerCase(),
+      phone: '0000000000',
       password: hashPassword,
       role: 'superAdmin',
     });

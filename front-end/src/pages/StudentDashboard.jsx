@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import StudentNavbar from "@/components/StudentNavbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -17,6 +18,7 @@ import { studentProfileSchema, fileUploadSchema, validateForm } from "@/lib/vali
 
 export default function StudentDashboard() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("recommendations");
   const [percentage, setPercentage] = useState("");
   const [interest, setInterest] = useState("");
   const [recommendations, setRecommendations] = useState([]);
@@ -112,7 +114,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <StudentNavbar setActiveTab={setActiveTab} />
       <section className="py-8 px-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background">
         <div className="container max-w-6xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Student Dashboard</h1>
@@ -128,7 +130,7 @@ export default function StudentDashboard() {
             </AlertDescription>
           </Alert>
 
-          <Tabs defaultValue="recommendations" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="recommendations">Recommendations</TabsTrigger>

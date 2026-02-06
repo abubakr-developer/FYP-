@@ -109,7 +109,7 @@ export default function Register() {
 
         // Redirect to login or dashboard
         setTimeout(() => {
-          navigate("/login"); // or navigate("/dashboard") if auto-login
+          navigate("/studentlogin"); // or navigate("/dashboard") if auto-login
         }, 1500);
       }
     } catch (error) {

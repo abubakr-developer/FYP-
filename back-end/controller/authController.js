@@ -325,6 +325,16 @@ export const forgetPassword = async (req, res) => {
   }
 };
 
+// function generateOTP(lenght){
+//   const digits = '0123456789';
+//   let otp = '';
+//   for (let i ; i < lenght; i++){
+//     otp =+ digits[Math.floor(Math.random() * 10)];
+//   }
+//   return otp;
+// }
+// const otp = generateOTP(6);
+// console.log(otp);
 
 export const resetPassword = async (req, res) => {
   try {

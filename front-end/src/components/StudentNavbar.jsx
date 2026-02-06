@@ -1,52 +1,59 @@
 import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState } from "react"; // ← added for loading state (optional but good UX)
 
-export default function UniversityNavbar({ setActiveTab }) {
+export default function StudentNavbar({ setActiveTab }) {
   const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // optional: disable button during request
 
-  // Get logged-in university data from localStorage (same pattern as student)
-  const university = JSON.parse(localStorage.getItem("user")) || {};
+  // Get logged-in student from localStorage
+  const student = JSON.parse(localStorage.getItem("user")) || {};
 
-  // Adjust these keys based on what your university registration/login actually saves
-  const universityName =
-    university.universityName ||
-    university.name ||
-    university.institutionName ||
-    "University";   // fallback
+  const studentName =
+    student.firstName && student.lastName
+      ? `${student.firstName} ${student.lastName}`
+      : "Student";
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
+
     setIsLoggingOut(true);
 
     try {
-      // Call your logout endpoint
+      // Option A: Using fetch (no extra dependency needed)
       const response = await fetch("/api/auth/logout", {
-        method: "POST",
+        method: "POST",           // or "GET" — depends on your backend
         headers: {
           "Content-Type": "application/json",
-          // Include token if your university backend uses JWT in header
+          // If your backend expects the token in header (common with JWT)
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        // credentials: "include",   // ← uncomment ONLY if using httpOnly cookies instead of localStorage
+        // credentials: "include",   // uncomment if using cookies instead of localStorage
       });
 
-      // We clear local data regardless of response status in most JWT setups
+      // Option B: If you prefer axios (uncomment if installed)
+      // import axios from "axios";
+      // await axios.post("/api/auth/logout", {}, {
+      //   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+      // });
+
+      // Even if backend returns 401/403 or error — we still want to logout locally
+      // Many JWT backends don't require a successful response for logout
+
+      // Clear local storage / session
       localStorage.removeItem("token");
       localStorage.removeItem("user");
 
-      // Redirect to landing / login page
+      // Redirect to home page ("/" = landing page)
       navigate("/");
 
-      // Optional hard redirect if you have issues with protected routes:
-      // window.location.href = "/";
+      // Optional: force refresh if you have protected routes listening to storage events
+      // window.location.href = "/";   // hard refresh (use only if needed)
 
     } catch (error) {
-      console.error("University logout failed:", error);
-
-      // Fail-safe: still clear data and redirect
+      console.error("Logout failed:", error);
+      // Still logout locally even if API fails (fail-safe)
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/");
@@ -60,14 +67,14 @@ export default function UniversityNavbar({ setActiveTab }) {
       <div className="container h-16 flex items-center justify-between">
 
         {/* LEFT: Logo */}
-        <Link to="/university-dashboard" className="flex items-center gap-2">
+        <Link to="/student-dashboard" className="flex items-center gap-2">
           <GraduationCap className="h-8 w-8 text-primary" />
           <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Unisphere
           </span>
         </Link>
 
-        {/* CENTER: Dashboard Navigation */}
+        {/* CENTER: Dashboard Tabs */}
         <div className="hidden md:flex items-center gap-6 text-sm font-medium">
           <button
             onClick={() => setActiveTab("profile")}
@@ -75,37 +82,34 @@ export default function UniversityNavbar({ setActiveTab }) {
           >
             Profile
           </button>
+
           <button
-            onClick={() => setActiveTab("programs")}
+            onClick={() => setActiveTab("recommendations")}
             className="hover:text-primary transition-colors"
           >
-            Programs
+            Recommendations
           </button>
+
           <button
             onClick={() => setActiveTab("scholarships")}
             className="hover:text-primary transition-colors"
           >
             Scholarships
           </button>
+
           <button
             onClick={() => setActiveTab("events")}
             className="hover:text-primary transition-colors"
           >
             Events
           </button>
-          <button
-            onClick={() => setActiveTab("news")}
-            className="hover:text-primary transition-colors"
-          >
-            News
-          </button>
         </div>
 
-        {/* RIGHT: University Name + Logout */}
+        {/* RIGHT: Student Info + Logout */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <User className="h-4 w-4 text-primary" />
-            <span className="hidden sm:inline">{universityName}</span>
+            <span className="hidden sm:inline">{studentName}</span>
           </div>
 
           <Button

@@ -92,47 +92,26 @@ export const universityProfileSchema = z.object({
     .optional(),
 });
 
-// Program validation
 export const programSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Program name is required")
-    .max(200, "Program name must be less than 200 characters"),
-  duration: z
-    .string()
-    .trim()
-    .min(1, "Duration is required")
-    .max(50, "Duration must be less than 50 characters"),
+  programName: z.string().min(3, "Program name is required"),
+  duration: z.string().min(2, "Duration is required"),
+  eligibilityCriteria: z.string().min(10, "Eligibility criteria is required"),
+  fee: z.string().regex(/^\d+$/, "Fee must be a number").optional(),
+  seats: z.string().regex(/^\d+$/, "Seats must be a number").optional(),
 });
 
-// Scholarship validation
 export const scholarshipSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Title is required")
-    .max(200, "Title must be less than 200 characters"),
-  amount: z
-    .number()
-    .min(0, "Amount cannot be negative")
-    .max(10000000, "Amount seems too high"),
-  deadline: z.string().min(1, "Deadline is required"),
+  title: z.string().min(3, "Title is required"),
+  amount: z.number().min(0, "Amount must be positive"),
+  deadline: z.string().min(10, "Deadline is required"),
+  description: z.string().min(10, "Description is required"),
 });
 
-// Event validation
 export const eventSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Event title is required")
-    .max(200, "Event title must be less than 200 characters"),
-  date: z.string().min(1, "Date is required"),
-  location: z
-    .string()
-    .trim()
-    .min(1, "Location is required")
-    .max(200, "Location must be less than 200 characters"),
+  title: z.string().min(3, "Title is required"),
+  date: z.string().min(10, "Date is required"),
+  location: z.string().min(2, "Location is required"),
+  description: z.string().min(10, "Description is required"),
 });
 
 // News validation

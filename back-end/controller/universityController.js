@@ -115,32 +115,49 @@ export const addProgram = async (req, res) => {
     const { programName, eligibilityCriteria, fee, duration, seats } = req.body;
 
     if (!programName || !eligibilityCriteria) {
-      return res.status(400).json({ message: "Program name and eligibility criteria required.", success: false });
+      return res.status(400).json({
+        message: "Program name and eligibility criteria required.",
+        success: false
+      });
     }
 
     const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
+      return res.status(404).json({
+        message: "University not found.",
+        success: false
+      });
     }
+
+    // ────────────────────────────────────────────────
+    // FIX: Ensure programs is always an array
+    if (!university.programs || !Array.isArray(university.programs)) {
+      university.programs = [];   // initialize if missing or not array
+    }
+    // ────────────────────────────────────────────────
 
     university.programs.push({
       programName,
       eligibilityCriteria: Number(eligibilityCriteria),
-      fee: Number(fee),
+      fee: Number(fee || 0),
       duration,
-      seats: Number(seats),
+      seats: Number(seats || 0),
     });
 
     await university.save();
 
-    return res.status(200).json({
+    return res.status(201).json({
       message: "Program added successfully",
       success: true,
       data: university.programs[university.programs.length - 1],
     });
   } catch (error) {
     console.error("Error adding program:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message   // ← helpful for debugging
+    });
   }
 };
 

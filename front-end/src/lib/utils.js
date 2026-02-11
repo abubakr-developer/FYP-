@@ -1,38 +1,70 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-
 const BASE_URL = "/api/university";
 
-export async function apiRequest(endpoint, options = {}) {
-  const token = localStorage.getItem("token");   // ← adjust key if different
+export async function apiFetch(endpoint, options = {}) {
+  const token = localStorage.getItem("token");
 
-  const defaultHeaders = {
-    "Content-Type": "application/json",
-  };
+  // Default headers — only apply Content-Type for JSON by default
+  const defaultHeaders = {};
 
+  // Add Authorization if token exists (safe for both JSON and FormData)
   if (token) {
     defaultHeaders.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers: { ...defaultHeaders, ...options.headers },
-  });
+  // Detect if we're sending FormData (file upload)
+  const isFormData = options.body instanceof FormData;
 
-  let data;
+  // Build final headers
+  let headers = {
+    ...defaultHeaders,
+    ...options.headers,
+  };
+
+  // Critical: Do NOT set Content-Type when using FormData
+  // Let the browser set multipart/form-data + boundary automatically
+  if (isFormData) {
+    delete headers["Content-Type"];
+  } else if (!headers["Content-Type"]) {
+    // Only set JSON for non-FormData bodies
+    headers["Content-Type"] = "application/json";
+  }
+
+  // Normalize endpoint (add leading slash if missing)
+  const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
   try {
-    data = await response.json();
-  } catch {
-    data = {};
-  }
+    const response = await fetch(`${BASE_URL}${normalizedEndpoint}`, {
+      ...options,
+      headers,
+      // Optional: include credentials if using cookies/sessions instead of token
+      // credentials: "include",
+    });
 
-  if (!response.ok) {
-    const message = data.message || `Server error (${response.status})`;
-    throw new Error(message);
-  }
+    // Handle non-JSON responses gracefully (e.g., empty 204, text errors, etc.)
+    let data;
+    const contentType = response.headers.get("content-type");
 
-  return data;
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json().catch(() => ({}));
+    } else {
+      // Fallback for non-JSON (rare in your case)
+      data = { message: await response.text().catch(() => "") };
+    }
+
+    if (!response.ok) {
+      const message = data.message || data.error || `Server error (${response.status})`;
+      throw new Error(message);
+    }
+
+    return data;
+  } catch (error) {
+    // Log for debugging (you can remove in production)
+    console.error(`apiFetch failed for ${endpoint}:`, error.message);
+    throw error; // Let caller (e.g. toast) handle it
+  }
 }
 
 export function cn(...inputs) {

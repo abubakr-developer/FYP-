@@ -1,10 +1,13 @@
 import University from "../models/university.js";
+import { uploadToCloudinary } from '../middleware/multer.js'; // Adjust path as needed
 import User from "../models/user.js";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 // University Registration
 export const registerUniversity = async (req, res) => {
+  console.log("===== INSIDE registerUniversity CONTROLLER =====");
+  console.log("Received body:", req.body);
   try {
     const { institutionName, officialEmail, contactPerson, phone, password, designation, website, address, institutionType } = req.body;
 
@@ -138,7 +141,7 @@ export const addProgram = async (req, res) => {
 
     university.programs.push({
       programName,
-      eligibilityCriteria: Number(eligibilityCriteria),
+      eligibilityCriteria, // Fixed: string (not Number, as it's a description)
       fee: Number(fee || 0),
       duration,
       seats: Number(seats || 0),
@@ -161,7 +164,7 @@ export const addProgram = async (req, res) => {
   }
 };
 
-// Get All Programs
+// Get All Programs (unchanged)
 export const getPrograms = async (req, res) => {
   try {
     const university = await University.findOne({ adminId: req.user._id });
@@ -180,45 +183,56 @@ export const getPrograms = async (req, res) => {
   }
 };
 
-// Add Scholarship
 export const addScholarship = async (req, res) => {
   try {
     const { name, description, amount, deadline, eligibility } = req.body;
 
     if (!name) {
-      return res.status(400).json({ message: "Scholarship name required.", success: false });
+      return res.status(400).json({
+        message: "Scholarship name is required.",
+        success: false
+      });
     }
 
     const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
+      return res.status(404).json({
+        message: "University not found.",
+        success: false
+      });
     }
-
-    const documentUrl = req.file?.path || (typeof uploadToCloudinary === 'function' ? await uploadToCloudinary(req.file, 'scholarships') : null);
+    if (!university.scholarships || !Array.isArray(university.scholarships)) {
+      university.scholarships = [];  // Initialize if missing, null, or wrong type
+    }
+    // ────────────────────────────────────────────────
 
     university.scholarships.push({
       name,
       description,
-      amount: Number(amount),
+      amount: Number(amount) || 0,
       deadline: deadline ? new Date(deadline) : null,
-      eligibility,
-      documentUrl,
+      eligibility: eligibility || "",  // optional fallback
+      // documentUrl: null,  // add only if you plan to support files later
     });
 
     await university.save();
 
-    return res.status(200).json({
+    return res.status(201).json({
       message: "Scholarship added successfully",
       success: true,
       data: university.scholarships[university.scholarships.length - 1],
     });
   } catch (error) {
-    console.error("Error adding scholarship:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    console.error("Error adding scholarship:", error.stack); // better stack trace
+    return res.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: error.message,   // helpful for frontend debugging
+    });
   }
 };
 
-// Get All Scholarships
+// Get All Scholarships (unchanged)
 export const getScholarships = async (req, res) => {
   try {
     const university = await University.findOne({ adminId: req.user._id });
@@ -237,7 +251,6 @@ export const getScholarships = async (req, res) => {
   }
 };
 
-// Add Event
 export const addEvent = async (req, res) => {
   try {
     const { title, description, date, location } = req.body;
@@ -251,7 +264,13 @@ export const addEvent = async (req, res) => {
       return res.status(404).json({ message: "University not found.", success: false });
     }
 
-    const posterUrl = req.file?.path || (typeof uploadToCloudinary === 'function' ? await uploadToCloudinary(req.file, 'events') : null);
+    let posterUrl = null;
+    if (req.file) {  // ← Changed from req.files?.image?.[0]
+      posterUrl = await uploadToCloudinary(req.file.buffer, 'events');
+    } else {
+      console.log("No file uploaded – proceeding without poster");
+      // Optionally make file required: return res.status(400).json({ message: "Poster image required" });
+    }
 
     university.events.push({
       title,
@@ -269,26 +288,30 @@ export const addEvent = async (req, res) => {
       data: university.events[university.events.length - 1],
     });
   } catch (error) {
-    console.error("Error adding event:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    console.error("Error adding event:", error.stack);  // ← Keep this for debugging!
+    return res.status(500).json({ 
+      success: false, 
+      message: "Server error during file upload", 
+      error: error.message  // ← Temporarily add this to see real error in response
+    });
   }
 };
 
-// Get All Events
+// Get All Events (unchanged)
 export const getEvents = async (req, res) => {
   try {
+    console.log('User:', req.user); // Log to check if req.user is set
     const university = await University.findOne({ adminId: req.user._id });
     if (!university) {
       return res.status(404).json({ message: "University not found.", success: false });
     }
-
     return res.status(200).json({
       message: "Events fetched successfully",
       success: true,
       data: university.events,
     });
   } catch (error) {
-    console.error("Error fetching events:", error);
+    console.error("Error fetching events:", error.stack); // Use error.stack for full trace
     return res.status(500).json({ message: "Internal server error", success: false });
   }
 };

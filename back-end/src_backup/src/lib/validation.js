@@ -136,18 +136,18 @@ export const eventSchema = z.object({
 });
 
 // News validation
-export const newsSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Title is required")
-    .max(200, "Title must be less than 200 characters"),
-  content: z
-    .string()
-    .trim()
-    .min(1, "Content is required")
-    .max(5000, "Content must be less than 5000 characters"),
-});
+// export const newsSchema = z.object({
+//   title: z
+//     .string()
+//     .trim()
+//     .min(1, "Title is required")
+//     .max(200, "Title must be less than 200 characters"),
+//   content: z
+//     .string()
+//     .trim()
+//     .min(1, "Content is required")
+//     .max(5000, "Content must be less than 5000 characters"),
+// });
 
 // File upload validation
 export const fileUploadSchema = z.object({

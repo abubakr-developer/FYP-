@@ -13,13 +13,16 @@ import Events from "./pages/Events";
 import Register from "./pages/Student/Register";
 import RoleSelection from "./pages/RoleSelection";
 import StudentDashboard from "./pages/StudentDashboard";
-import UniversityDashboard from "./pages/UniversityDashboard";
+import UniversityDashboard from "./pages/University/UniversityDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import StudentLogin from "./pages/Student/StudentLogin";
 import UniversityLogin from "./pages/University/UniversityLogin";
 import AdminLogin from "./pages/Admin/AdminLogin";
 import UniversityRegister from "./pages/University/UniversityRegister"; 
+import ProgramsTab from "./pages/University/ProgramsTab";
+import ScholarshipsTab from "./pages/University/ScholarshipsTab";
+import EventsTab from "./pages/University/EventsTab";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +49,9 @@ const App = () => (
           <Route path="/university-dashboard" element={<UniversityDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/university-register" element={<UniversityRegister />} />
+          <Route path="/programs" element={<ProgramsTab />} />
+          <Route path="/scholarships" element={<ScholarshipsTab />} />
+          <Route path="/events" element={<EventsTab />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

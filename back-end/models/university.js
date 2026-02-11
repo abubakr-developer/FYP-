@@ -74,7 +74,7 @@ const universitySchema = new mongoose.Schema({
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Admin user is required'], // changed from default null → required
+    required: false,
   },
 
   // Status workflow
@@ -93,37 +93,38 @@ const universitySchema = new mongoose.Schema({
     trim: true,
   },
 
-  // Very important: programs array (embedded documents)
-  programs: [{
-    programName: {
-      type: String,
-      required: [true, 'Program name is required'],
-      trim: true,
-    },
-    eligibilityCriteria: {
-      type: String,           // ← changed from Number → usually text description
-      required: [true, 'Eligibility criteria is required'],
-      trim: true,
-    },
-    fee: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-    duration: {
-      type: String,
-      trim: true,
-      // examples: "4 Years", "2 Years", "Diploma 1 Year"
-    },
-    seats: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-    // optional: you can add more later
-    // isActive: { type: Boolean, default: true },
-    // startDate: Date,
-  }],
+programs: {
+    type: [{
+      programName: { type: String, required: true },
+      duration: { type: String },
+      eligibilityCriteria: { type: String },
+      fee: { type: Number, default: 0 },
+      seats: { type: Number, default: 0 },    }],
+    default: []
+  },
+
+  scholarships: {
+    type: [{
+      name:          { type: String, required: true },
+      amount:        { type: Number, default: 0 },
+      deadline:      { type: Date },
+      description:   { type: String },
+      eligibility:   { type: String },
+      documentUrl:   { type: String },   // optional for future file uploads
+    }],
+    default: []
+  },
+
+  events: {
+    type: [{
+      title:        { type: String, required: true },
+      date:         { type: Date, required: true },
+      location:     { type: String },
+      description:  { type: String },
+      posterUrl:    { type: String },    // optional
+    }],
+    default: []
+  },
 
   // Optional: logo / banner
   logo: {

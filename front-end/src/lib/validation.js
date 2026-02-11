@@ -96,37 +96,39 @@ export const programSchema = z.object({
   programName: z.string().min(3, "Program name is required"),
   duration: z.string().min(2, "Duration is required"),
   eligibilityCriteria: z.string().min(10, "Eligibility criteria is required"),
-  fee: z.string().regex(/^\d+$/, "Fee must be a number").optional(),
-  seats: z.string().regex(/^\d+$/, "Seats must be a number").optional(),
+  fee: z.number().min(0, "Fee must be positive").optional(),
+  seats: z.number().min(0, "Seats must be non-negative").optional(),
 });
 
+// Updated scholarshipSchema (changed title to name, added eligibility, amount as number)
 export const scholarshipSchema = z.object({
-  title: z.string().min(3, "Title is required"),
+  name: z.string().min(3, "Name is required"),
   amount: z.number().min(0, "Amount must be positive"),
   deadline: z.string().min(10, "Deadline is required"),
   description: z.string().min(10, "Description is required"),
+  eligibility: z.string().min(10, "Eligibility is required"),
 });
 
+// Event schema (unchanged)
 export const eventSchema = z.object({
   title: z.string().min(3, "Title is required"),
   date: z.string().min(10, "Date is required"),
   location: z.string().min(2, "Location is required"),
   description: z.string().min(10, "Description is required"),
-});
-
+})
 // News validation
-export const newsSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Title is required")
-    .max(200, "Title must be less than 200 characters"),
-  content: z
-    .string()
-    .trim()
-    .min(1, "Content is required")
-    .max(5000, "Content must be less than 5000 characters"),
-});
+// export const newsSchema = z.object({
+//   title: z
+//     .string()
+//     .trim()
+//     .min(1, "Title is required")
+//     .max(200, "Title must be less than 200 characters"),
+//   content: z
+//     .string()
+//     .trim()
+//     .min(1, "Content is required")
+//     .max(5000, "Content must be less than 5000 characters"),
+// });
 
 // File upload validation
 export const fileUploadSchema = z.object({

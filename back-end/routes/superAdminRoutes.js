@@ -1,7 +1,7 @@
 import express from 'express';
 import { sendApprovalEmail } from '../utils/sendEmail.js';
-import auth from '../middlewaee/userAuth.js';
-import { isSuperAdmin } from '../middlewaee/isSuperAdmin.js';
+import auth from '../middleware/userAuth.js';
+import { isSuperAdmin } from '../middleware/isSuperAdmin.js';
 import {
   getAnalytics,
   getAllUsers,

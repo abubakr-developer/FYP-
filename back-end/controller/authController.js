@@ -1,3 +1,4 @@
+import "dotenv/config";
 import User from "../models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -186,6 +187,15 @@ export const login = async (req, res) => {
     if (!password) {
       console.error("Login Error: missing password", { email });
       return res.status(400).json({ success: false, message: "Password is required" });
+    }
+
+    // Validate JWT secret is configured before proceeding
+    if (!process.env.JWT_SECRET_KEY) {
+      console.error("Login Error: JWT_SECRET_KEY is not configured.");
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error: JWT secret not configured",
+      });
     }
 
     // Normalize email lookup

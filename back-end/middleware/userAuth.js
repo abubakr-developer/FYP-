@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 
 const userAuth = async (req, res, next) => {
     const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
-    console.log("Token:", token);
 
     if (!token) {
         return res.status(401).json({ 
@@ -14,9 +13,9 @@ const userAuth = async (req, res, next) => {
     try {
         const tokenDecode = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-        if (tokenDecode.id) {
+        if (tokenDecode.id || tokenDecode._id) {
             // attach id and role (if present) for downstream middlewares
-            req.user = { _id: tokenDecode.id, role: tokenDecode.role };
+            req.user = { ...tokenDecode, _id: tokenDecode.id || tokenDecode._id };
             next(); // Proceed to the next middleware/route
         } else {
             return res.status(401).json({ 

@@ -12,7 +12,11 @@ import Scholarships from "./pages/Scholarships";
 import Events from "./pages/Events";
 import Register from "./pages/Student/Register";
 import RoleSelection from "./pages/RoleSelection";
-import StudentDashboard from "./pages/StudentDashboard";
+import StudentDashboard from "./pages/Student/StudentDashboard";
+import StudentProfile from "./pages/Student/StudentProfile";
+import StudentRecommendations from "./pages/Student/StudentRecommendations";
+import StudentScholarships from "./pages/Student/StudentScholarships";
+import StudentEvents from "./pages/Student/StudentEvents";
 import UniversityDashboard from "./pages/University/UniversityDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -46,6 +50,10 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/role-selection" element={<RoleSelection />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/student-profile" element={<StudentProfile />} />
+          <Route path="/student-recommendations" element={<StudentRecommendations />} />
+          <Route path="/student-scholarships" element={<StudentScholarships />} />
+          <Route path="/student-events" element={<StudentEvents />} />
           <Route path="/university-dashboard" element={<UniversityDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/university-register" element={<UniversityRegister />} />

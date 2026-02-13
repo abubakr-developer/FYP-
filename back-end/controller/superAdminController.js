@@ -40,6 +40,7 @@ export const approveUniversity = async (req, res) => {
     // Try to send approval email
     let emailStatus = "not attempted";
     try {
+      console.log(`Attempting to send approval email to: ${university.officialEmail}`);
       const sent = await sendApprovalEmail(university);
       emailStatus = sent ? "sent" : "failed";
     } catch (emailErr) {
@@ -89,6 +90,7 @@ export const rejectUniversity = async (req, res) => {
     // Try to send rejection email
     let emailStatus = "not attempted";
     try {
+      console.log(`Attempting to send rejection email to: ${university.officialEmail}`);
       const sent = await sendRejectionEmail(university, reason);
       emailStatus = sent ? "sent" : "failed";
     } catch (emailErr) {

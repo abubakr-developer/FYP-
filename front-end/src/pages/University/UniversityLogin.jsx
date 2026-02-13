@@ -57,8 +57,9 @@ export default function UniversityLogin() {
         description: response.data.message || "Welcome to the University Portal",
       });
 
-      // Example: store token if returned
-      // localStorage.setItem("university_token", response.data.token);
+      if (response.data.token) {
+        localStorage.setItem("universityToken", response.data.token);
+      }
 
       navigate("/university-dashboard");
 
@@ -171,35 +172,33 @@ export default function UniversityLogin() {
               />
               {renderError("password")}
             </div>
-
             <Button
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              onClick={handleLogin}
+              variant="outline"
+              className="w-full mt-2"
               disabled={isSubmitting}
+              onClick={handleLogin}
             >
-              {isSubmitting ? "Signing in..." : "Sign In to Portal"}
+              Login
             </Button>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Need Help?
-                </span>
-              </div>
-            </div>
+<CardDescription>
+    If you don't have an account yet, please register your university to access the portal.
+  </CardDescription>
 
-            <div className="bg-muted/50 p-4 rounded-lg text-sm">
-              <p className="font-semibold mb-2">University Registration</p>
-              <p className="text-muted-foreground">
-                To register your institution, please contact our admin team at{" "}
-                <a href="mailto:support@unisphere.edu" className="text-primary hover:underline">
-                  support@unisphere.edu
-                </a>
-              </p>
-            </div>
+<Link to="/university-register">
+  <Button
+    variant="outline"
+    className="w-full mt-2"
+    disabled={isSubmitting}
+  >
+    Register Your University
+  </Button>
+</Link>
+
+
+            
+
+            
           </CardContent>
         </Card>
 

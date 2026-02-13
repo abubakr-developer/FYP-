@@ -1,317 +1,308 @@
 import University from "../models/university.js";
-import { uploadToCloudinary } from '../middleware/multer.js'; // Adjust path as needed
-import User from "../models/user.js";
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// University Registration
+
+function getProgramFaculty(programName) {
+  const programLower = programName.toLowerCase();
+  
+  if (programLower.includes('biology') || 
+      programLower.includes('zoology') || 
+      programLower.includes('chemistry') || 
+      programLower.includes('mathematics') || 
+      programLower.includes('math') || 
+      programLower.includes('physics') || 
+      programLower.includes('biotechnology')) {
+    return 'Faculty of Sciences';
+  }
+  
+  if (programLower.includes('computer') || 
+      programLower.includes('software') || 
+      programLower.includes('information technology') || 
+      programLower.includes('artificial intelligence') || 
+      programLower.includes('ai') ||
+      programLower.includes('it ')) {
+    return 'Faculty of Computing and Information Technology';
+  }
+  
+  if (programLower.includes('english') || 
+      programLower.includes('international relations') || 
+      programLower.includes('media') || 
+      programLower.includes('communication') || 
+      programLower.includes('education') || 
+      programLower.includes('islamic studies') || 
+      programLower.includes('urdu')) {
+    return 'Faculty of Humanities and Social Sciences';
+  }
+  
+  if (programLower.includes('fashion') || 
+      programLower.includes('textile') || 
+      programLower.includes('graphic design') || 
+      programLower.includes('design')) {
+    return 'Faculty of Textile and Fashion Designing';
+  }
+  
+  if (programLower.includes('pharmacy') || 
+      programLower.includes('nutrition') || 
+      programLower.includes('dietetics') || 
+      programLower.includes('medical') || 
+      programLower.includes('psychology') || 
+      programLower.includes('physical therapy') ||
+      programLower.includes('dpt')) {
+    return 'Faculty of Pharmacy and Allied Health Sciences';
+  }
+  
+  return 'Other';
+}
+
 export const registerUniversity = async (req, res) => {
-  console.log("===== INSIDE registerUniversity CONTROLLER =====");
-  console.log("Received body:", req.body);
   try {
-    const { institutionName, officialEmail, contactPerson, phone, password, designation, website, address, institutionType } = req.body;
-
-    if (!institutionName || !officialEmail || !contactPerson || !phone || !password) {
-      return res.status(400).json({ message: "Required fields missing", success: false });
-    }
-
-    const existingUni = await University.findOne({ officialEmail: officialEmail.toLowerCase() });
-    const existingUser = await User.findOne({ email: officialEmail.toLowerCase() });
-    if (existingUni || existingUser) {
-      return res.status(400).json({ message: "Email already registered", success: false });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const uni = new University({
+    const {
       institutionName,
-      officialEmail: officialEmail.toLowerCase(),
+      officialEmail,
       contactPerson,
       designation,
       phone,
       website,
       address,
       institutionType,
-      password: hashedPassword,
-      status: 'pending'
-    });
+      password,
+      confirmPassword,
+    } = req.body;
 
-    await uni.save();
-
-    // Create a user account for university admin
-    const [firstName, ...remaining] = (contactPerson || '').trim().split(/\s+/);
-    const lastName = remaining.length ? remaining.join(' ') : '';
-
-    const adminUser = new User({
-      firstName: firstName || 'Admin',
-      lastName: lastName || '',
-      email: officialEmail.toLowerCase(),
-      phone: phone || '',
-      password: hashedPassword,
-      role: 'universityAdmin'
-    });
-
-    try {
-      await adminUser.save();
-    } catch (userErr) {
-      console.error('Error creating admin user:', userErr);
-      if (userErr.name === 'ValidationError') {
-        const errors = Object.values(userErr.errors).map(e => e.message).join(', ');
-        return res.status(400).json({ message: `Invalid admin user data: ${errors}`, success: false, errors: userErr.errors });
-      }
-      if (userErr.code === 11000) {
-        return res.status(400).json({ message: 'Email or phone already registered', success: false });
-      }
-      return res.status(500).json({ message: 'Failed to create admin user', success: false });
+    if (!institutionName || !officialEmail || !contactPerson || !phone || !password || !confirmPassword) {
+      return res.status(400).json({ success: false, message: "Please fill all required fields." });
     }
 
-    // Link admin user to university
-    uni.adminId = adminUser._id;
-    await uni.save();
+    if (password !== confirmPassword) {
+      return res.status(400).json({ success: false, message: "Passwords do not match." });
+    }
 
-    return res.status(201).json({ message: "University registration submitted", success: true, university: { id: uni._id, status: uni.status } });
+    const existingUniversity = await University.findOne({ officialEmail: officialEmail.trim().toLowerCase() });
+    if (existingUniversity) {
+      return res.status(400).json({ success: false, message: "An institution with this email is already registered." });
+    }
+
+    const newUniversity = new University({
+      institutionName,
+      officialEmail: officialEmail.trim().toLowerCase(),
+      contactPerson,
+      designation,
+      phone,
+      website,
+      address,
+      institutionType,
+      password, // Pass plain password; model pre-save hook will hash it
+      status: 'pending',
+      programs: [],
+      scholarships: [],
+      events: []
+    });
+
+    await newUniversity.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Registration successful! Your application is pending approval.",
+    });
   } catch (error) {
-    console.error("Error registering university:", error);
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(e => e.message).join(', ');
-      return res.status(400).json({ message: `Invalid university data: ${errors}`, success: false, errors: error.errors });
-    }
-    if (error.code === 11000) {
-      return res.status(400).json({ message: 'University email already registered', success: false });
-    }
-    return res.status(500).json({ message: "Internal server error", success: false });
+    console.error("University Registration Error:", error);
+    res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
 
-// University login
 export const loginUniversity = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // 1. Basic validation
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password required", success: false });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase(), role: 'universityAdmin' });
-    if (!user) return res.status(400).json({ message: "Admin user not found", success: false });
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: "Invalid password", success: false });
-
-    // Check university approval status
-    const uni = await University.findOne({ adminId: user._id });
-    if (!uni) return res.status(400).json({ message: "Associated university not found", success: false });
-    if (uni.status !== 'approved') return res.status(403).json({ message: "University not approved yet", success: false });
-
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY);
-    res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "strict" });
-
-    return res.status(200).json({ message: "Login successful", success: true, token });
-  } catch (error) {
-    console.error("University login error:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
-  }
-};
-
-// Add Course/Program (with admission criteria)
-export const addProgram = async (req, res) => {
-  try {
-    const { programName, eligibilityCriteria, fee, duration, seats } = req.body;
-
-    if (!programName || !eligibilityCriteria) {
       return res.status(400).json({
-        message: "Program name and eligibility criteria required.",
-        success: false
+        success: false,
+        message: "Email and password are required.",
       });
     }
 
-    const university = await University.findOne({ adminId: req.user._id });
+    // 2. Find university
+    const university = await University.findOne({
+      officialEmail: email.toLowerCase().trim(),
+    }).select("+password");
+
     if (!university) {
-      return res.status(404).json({
-        message: "University not found.",
-        success: false
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials.",
       });
     }
 
-    // ────────────────────────────────────────────────
-    // FIX: Ensure programs is always an array
-    if (!university.programs || !Array.isArray(university.programs)) {
-      university.programs = [];   // initialize if missing or not array
+    // 3. Check if password exists
+    if (!university.password) {
+      console.warn(`No password set for university: ${email}`);
+      return res.status(403).json({
+        success: false,
+        message: "Account configuration error. Contact support.",
+      });
     }
-    // ────────────────────────────────────────────────
 
-    university.programs.push({
-      programName,
-      eligibilityCriteria, // Fixed: string (not Number, as it's a description)
-      fee: Number(fee || 0),
-      duration,
-      seats: Number(seats || 0),
-    });
-
-    await university.save();
-
-    return res.status(201).json({
-      message: "Program added successfully",
-      success: true,
-      data: university.programs[university.programs.length - 1],
-    });
-  } catch (error) {
-    console.error("Error adding program:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      success: false,
-      error: error.message   // ← helpful for debugging
-    });
-  }
-};
-
-// Get All Programs (unchanged)
-export const getPrograms = async (req, res) => {
-  try {
-    const university = await University.findOne({ adminId: req.user._id });
-    if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
+    // 4. Verify password
+    const isMatch = await bcrypt.compare(password, university.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials.",
+      });
     }
+
+    // 5. Check approval status
+    if (university.status !== "approved") {
+      return res.status(403).json({
+        success: false,
+        message: "Your university account is pending approval.",
+      });
+    }
+
+    // 6. Generate token – IMPORTANT: match role with middleware
+    const token = jwt.sign(
+      {
+        id: university._id,
+        role: "university",           // ← must match isUniversityAdmin check
+        email: university.officialEmail,
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "7d" }                  // longer for university portal
+    );
+
+    // Optional: set httpOnly cookie (more secure than localStorage)
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production",
+    //   sameSite: "strict",
+    //   maxAge: 7 * 24 * 60 * 60 * 1000,
+    // });
 
     return res.status(200).json({
-      message: "Programs fetched successfully",
       success: true,
-      data: university.programs,
+      message: "Login successful.",
+      token,
+      university: {
+        id: university._id,
+        institutionName: university.institutionName,
+        officialEmail: university.officialEmail,
+      },
     });
   } catch (error) {
-    console.error("Error fetching programs:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    console.error("University Login Error:", {
+      message: error.message,
+      stack: error.stack?.substring(0, 200),
+      email: req.body?.email,
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROGRAMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const addProgram = async (req, res) => {
+  try {
+    const universityId = req.user._id;
+    const programData = req.body;
+    const faculty = getProgramFaculty(programData.programName || programData.name || "");
+
+    // Push new program to the programs array
+    const updatedUni = await University.findByIdAndUpdate(
+      universityId,
+      { 
+        $push: { programs: programData },
+        $addToSet: { faculties: faculty }
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, message: "Program added", programs: updatedUni.programs });
+  } catch (error) {
+    console.error("Add Program Error:", error);
+    res.status(500).json({ success: false, message: "Failed to add program" });
+  }
+};
+
+export const getPrograms = async (req, res) => {
+  try {
+    const university = await University.findById(req.user._id);
+    res.status(200).json({ success: true, programs: university.programs || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch programs" });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCHOLARSHIPS
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const addScholarship = async (req, res) => {
   try {
-    const { name, description, amount, deadline, eligibility } = req.body;
+    const universityId = req.user._id;
+    const scholarshipData = req.body;
 
-    if (!name) {
-      return res.status(400).json({
-        message: "Scholarship name is required.",
-        success: false
-      });
-    }
+    const updatedUni = await University.findByIdAndUpdate(
+      universityId,
+      { $push: { scholarships: scholarshipData } },
+      { new: true }
+    );
 
-    const university = await University.findOne({ adminId: req.user._id });
-    if (!university) {
-      return res.status(404).json({
-        message: "University not found.",
-        success: false
-      });
-    }
-    if (!university.scholarships || !Array.isArray(university.scholarships)) {
-      university.scholarships = [];  // Initialize if missing, null, or wrong type
-    }
-    // ────────────────────────────────────────────────
-
-    university.scholarships.push({
-      name,
-      description,
-      amount: Number(amount) || 0,
-      deadline: deadline ? new Date(deadline) : null,
-      eligibility: eligibility || "",  // optional fallback
-      // documentUrl: null,  // add only if you plan to support files later
-    });
-
-    await university.save();
-
-    return res.status(201).json({
-      message: "Scholarship added successfully",
-      success: true,
-      data: university.scholarships[university.scholarships.length - 1],
-    });
+    res.status(200).json({ success: true, message: "Scholarship added", scholarships: updatedUni.scholarships });
   } catch (error) {
-    console.error("Error adding scholarship:", error.stack); // better stack trace
-    return res.status(500).json({
-      message: "Internal server error",
-      success: false,
-      error: error.message,   // helpful for frontend debugging
-    });
+    console.error("Add Scholarship Error:", error);
+    res.status(500).json({ success: false, message: "Failed to add scholarship" });
   }
 };
 
-// Get All Scholarships (unchanged)
 export const getScholarships = async (req, res) => {
   try {
-    const university = await University.findOne({ adminId: req.user._id });
-    if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
-    }
-
-    return res.status(200).json({
-      message: "Scholarships fetched successfully",
-      success: true,
-      data: university.scholarships,
-    });
+    const university = await University.findById(req.user._id);
+    res.status(200).json({ success: true, scholarships: university.scholarships || [] });
   } catch (error) {
-    console.error("Error fetching scholarships:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    res.status(500).json({ success: false, message: "Failed to fetch scholarships" });
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const addEvent = async (req, res) => {
   try {
-    const { title, description, date, location } = req.body;
+    const universityId = req.user._id;
+    const { title, date, location, description } = req.body;
+    
+    // Handle image upload (req.file is populated by multer)
+    const posterUrl = req.file ? req.file.path : null; 
 
-    if (!title || !date) {
-      return res.status(400).json({ message: "Title and date required.", success: false });
-    }
+    const newEvent = { title, date, location, description, posterUrl };
 
-    const university = await University.findOne({ adminId: req.user._id });
-    if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
-    }
+    const updatedUni = await University.findByIdAndUpdate(
+      universityId,
+      { $push: { events: newEvent } },
+      { new: true }
+    );
 
-    let posterUrl = null;
-    if (req.file) {  // ← Changed from req.files?.image?.[0]
-      posterUrl = await uploadToCloudinary(req.file.buffer, 'events');
-    } else {
-      console.log("No file uploaded – proceeding without poster");
-      // Optionally make file required: return res.status(400).json({ message: "Poster image required" });
-    }
-
-    university.events.push({
-      title,
-      description,
-      date: new Date(date),
-      location,
-      posterUrl,
-    });
-
-    await university.save();
-
-    return res.status(200).json({
-      message: "Event added successfully",
-      success: true,
-      data: university.events[university.events.length - 1],
-    });
+    res.status(200).json({ success: true, message: "Event added", events: updatedUni.events });
   } catch (error) {
-    console.error("Error adding event:", error.stack);  // ← Keep this for debugging!
-    return res.status(500).json({ 
-      success: false, 
-      message: "Server error during file upload", 
-      error: error.message  // ← Temporarily add this to see real error in response
-    });
+    console.error("Add Event Error:", error);
+    res.status(500).json({ success: false, message: "Failed to add event" });
   }
 };
 
-// Get All Events (unchanged)
 export const getEvents = async (req, res) => {
   try {
-    console.log('User:', req.user); // Log to check if req.user is set
-    const university = await University.findOne({ adminId: req.user._id });
-    if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
-    }
-    return res.status(200).json({
-      message: "Events fetched successfully",
-      success: true,
-      data: university.events,
-    });
+    const university = await University.findById(req.user._id);
+    res.status(200).json({ success: true, events: university.events || [] });
   } catch (error) {
-    console.error("Error fetching events:", error.stack); // Use error.stack for full trace
-    return res.status(500).json({ message: "Internal server error", success: false });
+    res.status(500).json({ success: false, message: "Failed to fetch events" });
   }
 };

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GraduationCap, AlertCircle, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
 // Define API base URL (uses .env variable or fallback to localhost)
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -91,60 +92,36 @@ export default function UniversityRegister() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/university/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      // Safely parse the response: if the server returns HTML (e.g., 404 or a redirect page)
-      // avoid calling response.json() directly which would throw the "Unexpected token '<'" error.
-      const contentType = response.headers.get("content-type") || "";
-      let data;
-      if (contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        throw new Error(`Expected JSON response but received: ${text.slice(0, 300)}`);
-      }
-
-      if (!response.ok) {
-        // Show backend validation error (single message or field-specific)
-        if (data.message) {
-          toast({
-            title: "Registration Failed",
-            description: data.message,
-            variant: "destructive",
-          });
-        }
-        // Optional: map field-specific errors if backend sends them
-        if (data.errors) {
-          setErrors(data.errors);
-        }
-        throw new Error(data.message || "Something went wrong");
-      }
+      // Ensure email is trimmed before sending
+      const payload = { ...formData, officialEmail: formData.officialEmail.trim() };
+      
+      const response = await axios.post(`${API_URL}/api/university/register`, payload);
 
       // Success
       toast({
         title: "Registration Submitted",
-        description: data.message || "Your institution registration is pending approval.",
+        description: response.data.message || "Your institution registration is pending approval.",
       });
 
-      // Navigate to a pending/confirmation page
       navigate("/university-login");
 
       // Optional: store token if you want to auto-login after approval later
-      if (data.token) {
-        localStorage.setItem("universityToken", data.token);
+      if (response.data.token) {
+        localStorage.setItem("universityToken", response.data.token);
       }
 
     } catch (error) {
       console.error("University registration error:", error);
+      
+      const errorMessage = error.response?.data?.message || "Failed to connect to the server. Please try again later.";
+      
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      }
+
       toast({
         title: "Error",
-        description: error.message || "Failed to connect to the server. Please try again later.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

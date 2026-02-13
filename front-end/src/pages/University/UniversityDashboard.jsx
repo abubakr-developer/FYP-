@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import UniversityNavbar from "@/components/UniversityNavbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,16 +13,17 @@ import { Users, BookOpen, Award, Calendar, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { universityProfileSchema, validateForm } from "@/lib/validation";
 import ProgramsTab from "@/pages/University/ProgramsTab"; 
-import ScholarshipsTab from "@//pages/University/ScholarshipsTab";
+import ScholarshipsTab from "@/pages/University/ScholarshipsTab";
 import EventsTab from "@/pages/University/EventsTab"; 
 
 // ────────────────────────────────────────────────
 // Reusable API helper (unchanged)
 // ────────────────────────────────────────────────
-const API_BASE = "/api/university";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = `${API_URL}/api/university`;
 
 async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("universityToken");
 
   const headers = {
     ...(options.headers || {}),
@@ -48,6 +50,11 @@ async function apiFetch(endpoint, options = {}) {
   }
 
   if (!response.ok) {
+    // Handle unauthorized access (token expired or invalid)
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("universityToken");
+      window.location.href = "/university-login";
+    }
     throw new Error(data.message || `Request failed (${response.status})`);
   }
 
@@ -56,8 +63,22 @@ async function apiFetch(endpoint, options = {}) {
 
 // ────────────────────────────────────────────────
 export default function UniversityDashboard() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+
+  // Protect route: redirect if no token found
+  useEffect(() => {
+    const token = localStorage.getItem("universityToken");
+    if (!token) {
+      navigate("/university-login");
+      toast({
+        title: "Authentication Required",
+        description: "Please login to access the dashboard.",
+        variant: "destructive",
+      });
+    }
+  }, [navigate, toast]);
 
   // Profile (still demo)
   const [profileData, setProfileData] = useState({ name: "", city: "", description: "" });
@@ -145,15 +166,15 @@ export default function UniversityDashboard() {
             </TabsContent>
 
             <TabsContent value="programs">
-              <ProgramsTab />
+              <ProgramsTab apiFetch={apiFetch} />
             </TabsContent>
 
             <TabsContent value="scholarships">
-              <ScholarshipsTab />
+              <ScholarshipsTab apiFetch={apiFetch} />
             </TabsContent>
 
             <TabsContent value="events">
-              <EventsTab />
+              <EventsTab apiFetch={apiFetch} />
             </TabsContent>
 
           </Tabs>

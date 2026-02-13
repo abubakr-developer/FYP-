@@ -3,13 +3,16 @@ import nodemailer from 'nodemailer';
 import 'dotenv/config';
 
 // Create and verify transporter once (better performance + catches config errors early)
+const getEnv = (key) => process.env[key]?.trim();
+const getPass = () => getEnv('PASSWORD_APP_EMAIL') || getEnv('APP_PASSWORD') || getEnv('PASSWORD');
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,                  // false → use STARTTLS on port 587 (Google recommends this)
   auth: {
-    user: process.env.EMAIL,      // ← must match your .env key
-    pass: process.env.PASSWORD_APP_EMAIL || process.env.APP_PASSWORD || process.env.PASSWORD || '',  // support multiple possible env names
+    user: getEnv('EMAIL'),      // ← must match your .env key
+    pass: getPass(),  // support multiple possible env names
   },
   // Helpful for debugging (remove in production if you want)
   logger: true,                   // logs SMTP conversation to console
@@ -25,7 +28,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.error('Email transporter verification FAILED:', error);
     // Helpful debug: if credentials missing, show a more specific error
-    if (!process.env.EMAIL || !(process.env.PASSWORD_APP_EMAIL || process.env.APP_PASSWORD || process.env.PASSWORD)) {
+    if (!getEnv('EMAIL') || !getPass()) {
       console.error('Missing email credentials. Ensure .env contains EMAIL and PASSWORD_APP_EMAIL (or APP_PASSWORD).');
     }
   } else {
@@ -35,11 +38,24 @@ transporter.verify((error, success) => {
 
 export const sendApprovalEmail = async (university) => {
   try {
+    const senderEmail = getEnv('EMAIL');
+    const recipientEmail = university.officialEmail?.trim();
+
+    if (!senderEmail || !getPass()) {
+      console.error("❌ EMAIL CONFIG ERROR: Missing EMAIL or Password in .env");
+      return false;
+    }
+
+    if (!recipientEmail) {
+      console.error(`❌ EMAIL ERROR: University "${university.institutionName}" has no valid email address.`);
+      return false;
+    }
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     const mailOptions = {
-      from: `"Unisphere Admin" <${process.env.EMAIL}>`,
-      to: university.officialEmail,
+      from: `"Unisphere Admin" <${senderEmail}>`,
+      to: recipientEmail,
       subject: 'Your Institution Has Been Approved – Welcome to Unisphere!',
       text: `Dear ${university.contactPerson || 'Team'},\n\n` +
             `Your institution "${university.institutionName}" has been approved!\n\n` +
@@ -64,7 +80,7 @@ export const sendApprovalEmail = async (university) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Approval email SENT → Message ID: ${info.messageId} → To: ${university.officialEmail}`);
+    console.log(`✅ Approval email SENT → Message ID: ${info.messageId} → To: ${recipientEmail}`);
     return true;
   } catch (err) {
     console.error('Approval email FAILED:', err.message);
@@ -75,11 +91,24 @@ export const sendApprovalEmail = async (university) => {
 
 export const sendRejectionEmail = async (university, reason) => {
   try {
+    const senderEmail = getEnv('EMAIL');
+    const recipientEmail = university.officialEmail?.trim();
+
+    if (!senderEmail || !getPass()) {
+      console.error("❌ EMAIL CONFIG ERROR: Missing EMAIL or Password in .env");
+      return false;
+    }
+
+    if (!recipientEmail) {
+      console.error(`❌ EMAIL ERROR: University "${university.institutionName}" has no valid email address.`);
+      return false;
+    }
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     const mailOptions = {
-      from: `"Unisphere Admin" <${process.env.EMAIL}>`,
-      to: university.officialEmail,
+      from: `"Unisphere Admin" <${senderEmail}>`,
+      to: recipientEmail,
       subject: 'Your Institution Registration – Decision from Unisphere',
       text: `Dear ${university.contactPerson || 'Team'},\n\n` +
             `We reviewed your institution "${university.institutionName}" registration.\n\n` +
@@ -101,7 +130,7 @@ export const sendRejectionEmail = async (university, reason) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`Rejection email SENT → Message ID: ${info.messageId} → To: ${university.officialEmail}`);
+    console.log(`✅ Rejection email SENT → Message ID: ${info.messageId} → To: ${recipientEmail}`);
     return true;
   } catch (err) {
     console.error('Rejection email FAILED:', err.message);

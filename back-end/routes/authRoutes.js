@@ -3,7 +3,7 @@ import { register, login, logout, forgetPassword, resetPassword, verifyOtp, upda
 import { getRecommendations, getMyRecommendations, getScholarships, getEvents, compareUniversities, updateStudentProfile, getProfile} from '../controller/studentController.js';
 import userAuth from '../middleware/userAuth.js';
 const authRouter = express.Router();
-
+ 
 // Registration with file uploads
 authRouter.post('/register', register);
 authRouter.post('/login', login);

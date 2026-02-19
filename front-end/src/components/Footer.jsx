@@ -60,6 +60,9 @@ export default function Footer() {
                   Platform Features
                 </Link>
               </li>
+              <p>
+                <h4  className="text-muted-foreground hover:text-primary transition-colors">Get Recommendations</h4>
+              </p>
             </ul>
           </div>
 

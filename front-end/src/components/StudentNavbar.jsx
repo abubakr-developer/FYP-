@@ -101,7 +101,7 @@ export default function StudentNavbar({ setActiveTab }) {
             onClick={() => setActiveTab("events")}
             className="hover:text-primary transition-colors"
           >
-            Events
+            Events & News
           </button>
         </div>
 

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Trash2, Edit, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { programSchema, validateForm } from "@/lib/validation"; 
 
@@ -18,6 +18,7 @@ export default function ProgramsTab({ apiFetch }) {
     seats: "",
   });
   const [programs, setPrograms] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const [loadingPrograms, setLoadingPrograms] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -47,7 +48,7 @@ export default function ProgramsTab({ apiFetch }) {
     );
   };
 
-  const handleAddProgram = async () => {
+  const handleSubmit = async () => {
     const parsed = {
       ...programData,
       fee: programData.fee ? parseFloat(programData.fee) : undefined,
@@ -61,11 +62,11 @@ export default function ProgramsTab({ apiFetch }) {
     }
 
     try {
-      await apiFetch("/programs", {
-        method: "POST",
+      await apiFetch(editingId ? `/programs/${editingId}` : "/programs", {
+        method: editingId ? "PUT" : "POST",
         body: JSON.stringify(parsed),
       });
-      toast({ title: "Success", description: "Program added successfully" });
+      toast({ title: "Success", description: `Program ${editingId ? "updated" : "added"} successfully` });
       setProgramData({ programName: "", duration: "", eligibilityCriteria: "", fee: "", seats: "" });
       setErrors({});
       loadPrograms();
@@ -75,13 +76,57 @@ export default function ProgramsTab({ apiFetch }) {
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setEditingId(null);
     }
+  };
+
+  const handleEdit = (program) => {
+    setProgramData({
+      programName: program.programName,
+      duration: program.duration,
+      eligibilityCriteria: program.eligibilityCriteria,
+      fee: program.fee || "",
+      seats: program.seats || "",
+    });
+    setEditingId(program._id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this program?")) return;
+    try {
+      await apiFetch(`/programs/${id}`, { method: "DELETE" });
+      toast({ title: "Success", description: "Program deleted successfully" });
+      loadPrograms();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setProgramData({ programName: "", duration: "", eligibilityCriteria: "", fee: "", seats: "" });
+    setEditingId(null);
+    setErrors({});
   };
 
   return (
     <div className="space-y-8">
       <Card className="border-2">
-        <CardHeader><CardTitle>Add Program</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            {editingId ? "Edit Program" : "Add Program"}
+            {editingId && (
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 mr-2" /> Cancel Edit
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -143,8 +188,8 @@ export default function ProgramsTab({ apiFetch }) {
             </div>
           </div>
 
-          <Button onClick={handleAddProgram} className="w-full" disabled={loadingPrograms}>
-            {loadingPrograms ? "Adding..." : "Add Program"}
+          <Button onClick={handleSubmit} className="w-full" disabled={loadingPrograms}>
+            {loadingPrograms ? "Processing..." : (editingId ? "Update Program" : "Add Program")}
           </Button>
         </CardContent>
       </Card>
@@ -160,7 +205,15 @@ export default function ProgramsTab({ apiFetch }) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {programs.map(p => (
                 <Card key={p._id}>
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-6 relative">
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(p)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(p._id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <h3 className="font-semibold">{p.programName}</h3>
                     <p className="text-sm text-muted-foreground">Duration: {p.duration}</p>
                     <p className="text-sm text-muted-foreground">Eligibility: {p.eligibilityCriteria}</p>

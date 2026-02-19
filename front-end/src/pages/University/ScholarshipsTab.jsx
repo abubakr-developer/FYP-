@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Trash2, Edit, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { scholarshipSchema, validateForm } from "@/lib/validation"; 
 
@@ -18,6 +18,7 @@ export default function ScholarshipsTab({ apiFetch }) {
     eligibility: "",
   });
   const [scholarships, setScholarships] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const [loadingScholarships, setLoadingScholarships] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -47,7 +48,7 @@ export default function ScholarshipsTab({ apiFetch }) {
     );
   };
 
-  const handleAddScholarship = async () => {
+  const handleSubmit = async () => {
     const parsed = {
       ...scholarshipData,
       amount: scholarshipData.amount ? parseFloat(scholarshipData.amount) : 0,
@@ -61,12 +62,12 @@ export default function ScholarshipsTab({ apiFetch }) {
     }
 
     try {
-      await apiFetch("/scholarships", {
-        method: "POST",
+      await apiFetch(editingId ? `/scholarships/${editingId}` : "/scholarships", {
+        method: editingId ? "PUT" : "POST",
         body: JSON.stringify(parsed),
       });
 
-      toast({ title: "Success", description: "Scholarship added successfully" });
+      toast({ title: "Success", description: `Scholarship ${editingId ? "updated" : "added"} successfully` });
       setScholarshipData({ name: "", amount: "", deadline: "", description: "", eligibility: "" });
       setErrors({});
       loadScholarships();
@@ -76,13 +77,49 @@ export default function ScholarshipsTab({ apiFetch }) {
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setEditingId(null);
     }
+  };
+
+  const handleEdit = (scholarship) => {
+    setScholarshipData({
+      name: scholarship.name,
+      amount: scholarship.amount,
+      deadline: scholarship.deadline ? new Date(scholarship.deadline).toISOString().split('T')[0] : "",
+      description: scholarship.description,
+      eligibility: scholarship.eligibility,
+    });
+    setEditingId(scholarship._id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this scholarship?")) return;
+    try {
+      await apiFetch(`/scholarships/${id}`, { method: "DELETE" });
+      toast({ title: "Success", description: "Scholarship deleted successfully" });
+      loadScholarships();
+    } catch (err) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setScholarshipData({ name: "", amount: "", deadline: "", description: "", eligibility: "" });
+    setEditingId(null);
+    setErrors({});
   };
 
   return (
     <div className="space-y-8">
       <Card className="border-2">
-        <CardHeader><CardTitle>Add Scholarship</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            {editingId ? "Edit Scholarship" : "Add Scholarship"}
+            {editingId && <Button variant="ghost" size="sm" onClick={handleCancelEdit}><X className="h-4 w-4 mr-2" /> Cancel</Button>}
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label>Name</Label>
@@ -143,8 +180,8 @@ export default function ScholarshipsTab({ apiFetch }) {
             {renderError("eligibility")}
           </div>
 
-          <Button onClick={handleAddScholarship} className="w-full" disabled={loadingScholarships}>
-            {loadingScholarships ? "Adding..." : "Add Scholarship"}
+          <Button onClick={handleSubmit} className="w-full" disabled={loadingScholarships}>
+            {loadingScholarships ? "Processing..." : (editingId ? "Update Scholarship" : "Add Scholarship")}
           </Button>
         </CardContent>
       </Card>
@@ -160,7 +197,15 @@ export default function ScholarshipsTab({ apiFetch }) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {scholarships.map(s => (
                 <Card key={s._id}>
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-6 relative">
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(s)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(s._id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <h3 className="font-semibold">{s.name}</h3>
                     <p className="text-sm">PKR {s.amount?.toLocaleString() || "—"}</p>
                     <p className="text-sm text-muted-foreground">Deadline: {s.deadline ? new Date(s.deadline).toLocaleDateString() : "—"}</p>

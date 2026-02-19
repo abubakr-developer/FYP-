@@ -68,6 +68,7 @@ export const registerUniversity = async (req, res) => {
       // FIX: Set to approved immediately for development/testing (removes pending logic so recommendations work).
       // If you want approval flow, add an admin endpoint to update this later.
       isApproved: true,
+      status: 'approved',
       approvalStatus: 'approved',
     });
 
@@ -121,6 +122,11 @@ export const loginUniversity = async (req, res) => {
       success: true,
       message: "Login successful.",
       token,
+      university: {
+        id: university._id,
+        institutionName: university.institutionName,
+        officialEmail: university.officialEmail,
+      },
     });
 
   } catch (error) {

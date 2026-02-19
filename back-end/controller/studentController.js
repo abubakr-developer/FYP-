@@ -1,58 +1,115 @@
 // controllers/studentController.js
 
+import mongoose from 'mongoose';
 import User from '../models/user.js';
 import University from '../models/university.js';
 
-// Helper function - unchanged (good as is)
 function getProgramFaculty(programName) {
-  const programLower = programName.toLowerCase();
-  
-  if (programLower.includes('biology') || 
-      programLower.includes('zoology') || 
-      programLower.includes('chemistry') || 
-      programLower.includes('mathematics') || 
-      programLower.includes('math') || 
-      programLower.includes('physics') || 
-      programLower.includes('biotechnology')) {
-    return 'Faculty of Sciences';
+  if (!programName || typeof programName !== 'string') {
+    console.log('Warning: Invalid program name detected → returning "Other"');
+    console.log('Offending value:', programName);
+    return 'Other';
   }
-  
+
+  const programLower = programName.toLowerCase();
+
+  // 1. Faculty of Computing & Information Technology
   if (programLower.includes('computer') || 
       programLower.includes('software') || 
       programLower.includes('information technology') || 
       programLower.includes('artificial intelligence') || 
-      programLower.includes('ai') ||
-      programLower.includes('it ')) {
-    return 'Faculty of Computing and Information Technology';
+      programLower.includes('data science') ||
+      programLower.includes('cyber') ||
+      programLower.includes('computing') ||
+      /\bcs\b/.test(programLower) || 
+      /\bit\b/.test(programLower) || 
+      /\bai\b/.test(programLower)) {
+    return 'Faculty of Computing & Information Technology';
   }
   
-  if (programLower.includes('english') || 
-      programLower.includes('international relations') || 
+  // 2. Faculty of Engineering & Architecture
+  if (programLower.includes('engineering') || 
+      programLower.includes('architecture')) {
+    return 'Faculty of Engineering & Architecture';
+  }
+
+  // 3. Faculty of Humanities & Social Sciences
+  if (programLower.includes('education') || 
+      programLower.includes('english') || 
+      programLower.includes('islamic') || 
       programLower.includes('media') || 
       programLower.includes('communication') || 
-      programLower.includes('education') || 
-      programLower.includes('islamic studies') || 
-      programLower.includes('urdu')) {
-    return 'Faculty of Humanities and Social Sciences';
+      programLower.includes('politics') || 
+      programLower.includes('international relations') || 
+      programLower.includes('urdu') || 
+      programLower.includes('psychology') || 
+      programLower.includes('sociology') || 
+      programLower.includes('history') ||
+      programLower.includes('arts')) {
+    return 'Faculty of Humanities & Social Sciences';
   }
   
+  // 4. Faculty of Law
+  if (programLower.includes('law') || 
+      programLower.includes('llb') || 
+      programLower.includes('legal') || 
+      programLower.includes('paralegal')) {
+    return 'Faculty of Law';
+  }
+  
+  // 5. Faculty of Management & Administrative Sciences
+  if (programLower.includes('aviation') || 
+      programLower.includes('business') || 
+      programLower.includes('bba') || 
+      programLower.includes('commerce') || 
+      programLower.includes('economics') || 
+      programLower.includes('accounting') || 
+      programLower.includes('finance') || 
+      programLower.includes('mba') || 
+      programLower.includes('management') || 
+      programLower.includes('admin')) {
+    return 'Faculty of Management & Administrative Sciences';
+  }
+
+  // 7. Faculty of Pharmacy & Allied Health Sciences (Check before Sciences)
+  if (programLower.includes('pharmacy') || 
+      programLower.includes('pharmd') || 
+      programLower.includes('physiotherapy') || 
+      programLower.includes('rehabilitation') || 
+      programLower.includes('dpt') || 
+      programLower.includes('dietetics') || 
+      programLower.includes('nutrition') || 
+      programLower.includes('medical lab') || 
+      programLower.includes('imaging') || 
+      programLower.includes('radiography') || 
+      programLower.includes('health')) {
+    return 'Faculty of Pharmacy & Allied Health Sciences';
+  }
+
+  // 6. Faculty of Sciences (Generic Science check last)
+  if (programLower.includes('biochemistry') || 
+      programLower.includes('biology') || 
+      programLower.includes('zoology') || 
+      programLower.includes('biotechnology') || 
+      programLower.includes('chemistry') || 
+      programLower.includes('mathematics') || 
+      programLower.includes('math') || 
+      programLower.includes('physics') || 
+      programLower.includes('botany') || 
+      programLower.includes('science') || 
+      programLower.includes('bio') ||
+      programLower.includes('fsc') || 
+      programLower.includes('intermediate')) {
+    return 'Faculty of Sciences';
+  }
+
+  // 8. Faculty of Textile & Fashion Designing
   if (programLower.includes('fashion') || 
       programLower.includes('textile') || 
-      programLower.includes('graphic design') || 
       programLower.includes('design')) {
-    return 'Faculty of Textile and Fashion Designing';
+    return 'Faculty of Textile & Fashion Designing';
   }
-  
-  if (programLower.includes('pharmacy') || 
-      programLower.includes('nutrition') || 
-      programLower.includes('dietetics') || 
-      programLower.includes('medical') || 
-      programLower.includes('psychology') || 
-      programLower.includes('physical therapy') ||
-      programLower.includes('dpt')) {
-    return 'Faculty of Pharmacy and Allied Health Sciences';
-  }
-  
+
   return 'Other';
 }
 
@@ -162,13 +219,12 @@ export const compareUniversities = async (req, res) => {
 
     const universities = await University.find({
       _id: { $in: universityIds },
-      isApproved: true,
-      approvalStatus: 'approved'
+      status: 'approved'
     }).select('-password -registeredStudents');
 
     const comparison = universities.map(uni => ({
       _id: uni._id,
-      universityName: uni.universityName,
+      universityName: uni.institutionName,
       shortName: uni.shortName,
       logo: uni.logo,
       type: uni.type,
@@ -178,7 +234,7 @@ export const compareUniversities = async (req, res) => {
       website: uni.website,
       rating: uni.rating,
       stats: uni.stats,
-      programs: uni.programs.filter(p => p.isActive),
+      programs: uni.programs.filter(p => p.isActive !== false),
       faculties: uni.faculties
     }));
 
@@ -200,9 +256,16 @@ export const compareUniversities = async (req, res) => {
 // ────────────────────────────────────────────────
 export const getRecommendations = async (req, res) => {
   try {
+    console.log('╔════════════════════════════════════════════╗');
+    console.log('║  getRecommendations (body-based) CALLED    ║');
+    console.log('╚════════════════════════════════════════════╝');
+    console.log('Time:', new Date().toISOString());
+    console.log('Request body:', req.body);
+
     const { intermediatePercentage, fieldOfInterest } = req.body;
 
     if (!intermediatePercentage || !fieldOfInterest) {
+      console.log('→ Missing required fields');
       return res.status(400).json({
         success: false,
         message: 'Intermediate percentage and field of interest are required'
@@ -211,16 +274,24 @@ export const getRecommendations = async (req, res) => {
 
     const perc = parseFloat(intermediatePercentage);
     if (isNaN(perc) || perc < 0 || perc > 100) {
+      console.log('→ Invalid percentage:', intermediatePercentage);
       return res.status(400).json({
         success: false,
         message: 'Invalid percentage value'
       });
     }
 
+    console.log(`Processing request → %: ${perc} | Interest: ${fieldOfInterest}`);
+
     const universities = await University.find({
-      isApproved: true,
-      approvalStatus: 'approved',
+      status: 'approved'
     }).select('-password -registeredStudents');
+
+    console.log(`Found ${universities.length} approved universities`);
+
+    if (universities.length === 0) {
+      console.log('!!! NO APPROVED UNIVERSITIES EXIST !!!');
+    }
 
     const recommendations = {
       eligible: [],
@@ -229,10 +300,18 @@ export const getRecommendations = async (req, res) => {
       studentPercentage: perc
     };
 
-    universities.forEach(university => {
+    universities.forEach((university, idx) => {
+      console.log(`\nUniversity #${idx + 1}: ${university.institutionName || '(unnamed)'} (${university._id})`);
+      console.log(`Programs: ${university.programs?.length || 0}`);
+
+      if (!university.programs || !Array.isArray(university.programs)) {
+        console.log('  → Invalid or missing programs array');
+        return;
+      }
+
       const uniData = {
         _id: university._id,
-        universityName: university.universityName,
+        universityName: university.institutionName,
         shortName: university.shortName || '',
         logo: university.logo || '',
         address: university.address || '',
@@ -246,32 +325,48 @@ export const getRecommendations = async (req, res) => {
       const notEligiblePrograms = [];
 
       university.programs.forEach(program => {
-        const programFaculty = getProgramFaculty(program.name);
+        const pName = program.programName || program.name;
+        const programFaculty = getProgramFaculty(pName);
         
-        if (programFaculty === fieldOfInterest && program.isActive) {
+        let minPerc = parseFloat(program.minPercentage);
+        if (isNaN(minPerc) || minPerc === 0) {
+           const match = (program.eligibilityCriteria || '').toString().match(/(\d+(\.\d+)?)/);
+           minPerc = match ? parseFloat(match[0]) : 0;
+        }
+        
+        const maxPerc = parseFloat(program.maxPercentage) || 100;
+        console.log(`  • "${pName || '(no name)'}" → ${programFaculty} (active: ${program.isActive ?? 'unset'}) Min: ${minPerc}%`);
+
+        if (programFaculty === fieldOfInterest && (program.isActive !== false)) {
+          console.log('     → Faculty matched');
+
           const progData = {
             _id: program._id,
-            name: program.name,
-            level: program.level,
-            duration: program.duration,
-            minPercentage: program.minPercentage,
-            maxPercentage: program.maxPercentage,
-            totalSeats: program.totalSeats,
-            availableSeats: program.availableSeats,
-            feePerSemester: program.feePerSemester,
-            description: program.description
+            name: pName || '(unnamed program)',
+            level: program.level || 'N/A',
+            duration: program.duration || 'N/A',
+            minPercentage: minPerc,
+            maxPercentage: maxPerc,
+            totalSeats: program.totalSeats || 'N/A',
+            availableSeats: program.availableSeats || 'N/A',
+            feePerSemester: program.fee || program.feePerSemester || 'N/A',
+            description: program.description || ''
           };
 
-          if (perc >= program.minPercentage && perc <= (program.maxPercentage || 100)) {
+          if (perc >= progData.minPercentage && perc <= progData.maxPercentage) {
+            console.log('       → Eligible');
             eligiblePrograms.push(progData);
           } else {
+            console.log('       → Not eligible');
             notEligiblePrograms.push({
               ...progData,
-              reason: perc < program.minPercentage 
-                ? `Minimum ${program.minPercentage}% required`
-                : `Exceeds maximum ${program.maxPercentage}%`
+              reason: perc < progData.minPercentage
+                ? `Minimum ${progData.minPercentage}% required`
+                : `Exceeds maximum ${progData.maxPercentage}%`
             });
           }
+        } else {
+          console.log('     → No match: Faculty ' + programFaculty + ' vs ' + fieldOfInterest);
         }
       });
 
@@ -285,12 +380,15 @@ export const getRecommendations = async (req, res) => {
 
     recommendations.eligible.sort((a, b) => b.programs.length - a.programs.length);
 
-    // FIX: Add logging for debugging (remove in production)
-    console.log('Recommendations generated:', recommendations);
+    console.log('Final recommendations summary:');
+    console.log(`  Eligible universities: ${recommendations.eligible.length}`);
+    console.log(`  Not eligible universities: ${recommendations.notEligible.length}`);
+    console.log('================================================================');
 
     res.status(200).json({ success: true, data: recommendations });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('ERROR in getRecommendations:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };
 
@@ -298,14 +396,28 @@ export const getRecommendations = async (req, res) => {
 // GET MY RECOMMENDATIONS (uses saved profile)
 // ────────────────────────────────────────────────
 export const getMyRecommendations = async (req, res) => {
+  console.log('╔════════════════════════════════════════════╗');
+  console.log('║  getMyRecommendations (profile-based) CALLED║');
+  console.log('╚════════════════════════════════════════════╝');
+  console.log('Time:', new Date().toISOString());
+  console.log('User from token:', req.user?._id || 'NO USER');
+
   try {
     const user = await User.findById(req.user._id);
 
     if (!user || user.role !== "student") {
+      console.log('→ Not a student or user not found');
       return res.status(403).json({ success: false, message: "Student access only" });
     }
 
+    console.log('Student profile loaded:', {
+      id: user._id,
+      percentage: user.intermediatePercentage,
+      field: user.fieldOfInterest
+    });
+
     if (!user.intermediatePercentage || !user.fieldOfInterest) {
+      console.log('→ Profile incomplete');
       return res.status(400).json({
         success: false,
         message: 'Please complete your academic profile (percentage + field of interest)'
@@ -313,9 +425,14 @@ export const getMyRecommendations = async (req, res) => {
     }
 
     const universities = await University.find({
-      isApproved: true,
-      approvalStatus: 'approved',
+      status: 'approved'
     }).select('-password -registeredStudents');
+
+    console.log(`Found ${universities.length} approved universities`);
+
+    if (universities.length === 0) {
+      console.log('!!! NO APPROVED UNIVERSITIES IN DATABASE !!!');
+    }
 
     const recommendations = {
       eligible: [],
@@ -324,10 +441,18 @@ export const getMyRecommendations = async (req, res) => {
       studentPercentage: user.intermediatePercentage
     };
 
-    universities.forEach(university => {
+    universities.forEach((university, idx) => {
+      console.log(`\nUniversity #${idx + 1}: ${university.institutionName || '(unnamed)'} (${university._id})`);
+      console.log(`Programs: ${university.programs?.length || 0}`);
+
+      if (!university.programs || !Array.isArray(university.programs)) {
+        console.log('  → Invalid or missing programs array');
+        return;
+      }
+
       const uniData = {
         _id: university._id,
-        universityName: university.universityName,
+        universityName: university.institutionName,
         shortName: university.shortName || '',
         logo: university.logo || '',
         address: university.address || '',
@@ -341,48 +466,70 @@ export const getMyRecommendations = async (req, res) => {
       const notEligiblePrograms = [];
 
       university.programs.forEach(program => {
-        const programFaculty = getProgramFaculty(program.name);
+        const pName = program.programName || program.name;
+        const programFaculty = getProgramFaculty(pName);
         
-        if (programFaculty === user.fieldOfInterest && program.isActive) {
+        let minPerc = parseFloat(program.minPercentage);
+        if (isNaN(minPerc) || minPerc === 0) {
+           const match = (program.eligibilityCriteria || '').toString().match(/(\d+(\.\d+)?)/);
+           minPerc = match ? parseFloat(match[0]) : 0;
+        }
+        
+        const maxPerc = parseFloat(program.maxPercentage) || 100;
+        console.log(`  • "${pName || '(no name)'}" → ${programFaculty} (active: ${program.isActive ?? 'unset'}) Min: ${minPerc}%`);
+
+        if (programFaculty === user.fieldOfInterest && (program.isActive !== false)) {
+          console.log('     → Faculty matched');
+
           const progData = {
             _id: program._id,
-            name: program.name,
+            name: pName,
             level: program.level,
             duration: program.duration,
-            minPercentage: program.minPercentage,
-            maxPercentage: program.maxPercentage,
+            minPercentage: minPerc,
+            maxPercentage: maxPerc,
             totalSeats: program.totalSeats,
             availableSeats: program.availableSeats,
-            feePerSemester: program.feePerSemester,
+            feePerSemester: program.fee || program.feePerSemester || 'N/A',
             description: program.description
           };
 
-          if (user.intermediatePercentage >= program.minPercentage &&
-              user.intermediatePercentage <= (program.maxPercentage || 100)) {
+          if (user.intermediatePercentage >= progData.minPercentage && user.intermediatePercentage <= progData.maxPercentage) {
+            console.log('       → Eligible');
             eligiblePrograms.push(progData);
           } else {
+            console.log('       → Not eligible');
             notEligiblePrograms.push({
               ...progData,
-              reason: user.intermediatePercentage < program.minPercentage 
-                ? `Minimum ${program.minPercentage}% required`
-                : `Exceeds maximum ${program.maxPercentage}%`
+              reason: user.intermediatePercentage < progData.minPercentage
+                ? `Minimum ${progData.minPercentage}% required`
+                : `Exceeds maximum ${progData.maxPercentage}%`
             });
           }
+        } else {
+          console.log('     → No match: Faculty ' + programFaculty + ' vs ' + user.fieldOfInterest);
         }
       });
 
-      if (eligiblePrograms.length > 0) recommendations.eligible.push({ ...uniData, programs: eligiblePrograms });
-      if (notEligiblePrograms.length > 0) recommendations.notEligible.push({ ...uniData, programs: notEligiblePrograms });
+      if (eligiblePrograms.length > 0) {
+        recommendations.eligible.push({ ...uniData, programs: eligiblePrograms });
+      }
+      if (notEligiblePrograms.length > 0) {
+        recommendations.notEligible.push({ ...uniData, programs: notEligiblePrograms });
+      }
     });
 
     recommendations.eligible.sort((a, b) => b.programs.length - a.programs.length);
 
-    // FIX: Add logging for debugging (remove in production)
-    console.log('My Recommendations generated for user', user._id, ':', recommendations);
+    console.log('Final summary:');
+    console.log(`  Eligible universities: ${recommendations.eligible.length}`);
+    console.log(`  Not eligible universities: ${recommendations.notEligible.length}`);
+    console.log('================================================================');
 
     res.status(200).json({ success: true, data: recommendations });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('ERROR in getMyRecommendations:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };
 
@@ -397,29 +544,18 @@ export const getScholarships = async (req, res) => {
       return res.status(403).json({ success: false, message: "Student access only" });
     }
 
-    if (!user.fieldOfInterest) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please set your field of interest in your profile first'
-      });
-    }
-
-    // Find universities that have the student's field of interest in their faculties.
+    // Find all approved universities and their scholarships
     const universities = await University.find({
-      isApproved: true,
-      approvalStatus: 'approved',
-    }).select('universityName scholarships programs');
+      status: 'approved'
+    }).select('institutionName scholarships');
 
     const allScholarships = [];
     universities.forEach(uni => {
-      // Check if university has any program in the student's field of interest
-      const hasRelevantProgram = uni.programs.some(p => getProgramFaculty(p.name) === user.fieldOfInterest);
-
-      if (hasRelevantProgram) {
+      if (uni.scholarships && uni.scholarships.length > 0) {
         uni.scholarships.forEach(scholarship => {
           allScholarships.push({
             ...scholarship.toObject(),
-            universityName: uni.universityName,
+            universityName: uni.institutionName,
             universityId: uni._id,
           });
         });
@@ -436,6 +572,56 @@ export const getScholarships = async (req, res) => {
   }
 };
 
+// Public version - no auth, only approved universities
+export const getAllScholarshipsPublic = async (req, res) => {
+  try {
+    const universities = await University.find({ status: "approved" })
+      .select("institutionName scholarships admissionWebsite website");
+
+    const scholarships = universities.flatMap((uni) =>
+      (uni.scholarships || []).map((sch) => ({
+        ...sch.toObject(),
+        universityName: uni.institutionName,
+        universityId: uni._id.toString(),
+        admissionWebsite: uni.admissionWebsite || uni.website || "",
+      }))
+    );
+
+    res.status(200).json({
+      success: true,
+      scholarships,
+      count: scholarships.length,
+    });
+  } catch (error) {
+    console.error("Public scholarships error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const getAllEventsPublic = async (req, res) => {
+  try {
+    const universities = await University.find({ status: "approved" })
+      .select("institutionName events");
+
+    const events = universities.flatMap((uni) =>
+      (uni.events || []).map((ev) => ({
+        ...ev.toObject(),
+        universityName: uni.institutionName,
+        universityId: uni._id.toString(),
+      }))
+    );
+
+    res.status(200).json({
+      success: true,
+      events,
+      count: events.length,
+    });
+  } catch (error) {
+    console.error("Public events error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 // Do the same replacement in getEvents and compareUniversities
 
 // @desc    Get all events from approved universities (sorted by date)
@@ -444,16 +630,15 @@ export const getScholarships = async (req, res) => {
 export const getEvents = async (req, res) => {
   try {
     const universities = await University.find({
-      isApproved: true,
-      approvalStatus: 'approved'
-    }).select('universityName _id events');
+      status: 'approved'
+    }).select('institutionName _id events');
 
     const events = [];
     universities.forEach(uni => {
       uni.events.forEach(ev => {
         events.push({
           ...ev.toObject(),
-          universityName: uni.universityName,
+          universityName: uni.institutionName,
           universityId: uni._id
         });
       });
@@ -474,5 +659,94 @@ export const getEvents = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+// ────────────────────────────────────────────────
+// GET UNIVERSITY DETAILS (Single)
+// ────────────────────────────────────────────────
+export const getUniversityDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid University ID" });
+    }
+
+    const university = await University.findById(id).select('-password -registeredStudents');
+
+    if (!university) {
+      return res.status(404).json({ success: false, message: "University not found" });
+    }
+
+    // Fetch student profile for eligibility check
+    const student = await User.findById(req.user._id);
+    const studentPerc = student?.intermediatePercentage || 0;
+    const studentField = student?.fieldOfInterest || "";
+
+    // Filter active programs and map fields for frontend consistency
+    const activePrograms = university.programs
+      .filter(p => p.isActive !== false)
+      .map(p => {
+        const pName = p.programName || p.name;
+        const programFaculty = getProgramFaculty(pName);
+        
+        let minPerc = parseFloat(p.minPercentage);
+        if (isNaN(minPerc) || minPerc === 0) {
+           const match = (p.eligibilityCriteria || '').toString().match(/(\d+(\.\d+)?)/);
+           minPerc = match ? parseFloat(match[0]) : 0;
+        }
+        const maxPerc = parseFloat(p.maxPercentage) || 100;
+
+        let isEligible = false;
+        let ineligibilityReason = null;
+
+        if (programFaculty === studentField) {
+            if (studentPerc >= minPerc && studentPerc <= maxPerc) {
+                isEligible = true;
+            } else {
+                ineligibilityReason = studentPerc < minPerc 
+                    ? `Min ${minPerc}% required` 
+                    : `Exceeds max ${maxPerc}%`;
+            }
+        } else {
+            ineligibilityReason = "Field mismatch";
+        }
+
+        return {
+          ...p.toObject(),
+          name: pName, // Ensure name is available
+          faculty: programFaculty, // Add faculty so frontend filtering works
+          minPercentage: minPerc,
+          maxPercentage: maxPerc,
+          feePerSemester: p.fee || p.feePerSemester || 'N/A',
+          isEligible,
+          ineligibilityReason
+        };
+      });
+
+    const data = {
+      ...university.toObject(),
+      universityName: university.institutionName, // Map institutionName to universityName for frontend
+      programs: activePrograms,
+      rating: university.rating || 0
+    };
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("getUniversityDetails error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// ────────────────────────────────────────────────
+// GET ALL UNIVERSITIES (Public/Student)
+// ────────────────────────────────────────────────
+export const getAllUniversities = async (req, res) => {
+  try {
+    const universities = await University.find({ status: 'approved' }).select('-password -registeredStudents');
+    res.status(200).json({ success: true, data: universities });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

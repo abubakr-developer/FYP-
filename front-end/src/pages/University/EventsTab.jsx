@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Trash2, Edit, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ export default function EventsTab({ apiFetch }) {
   const [eventFile, setEventFile] = useState(null);
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -79,7 +80,7 @@ export default function EventsTab({ apiFetch }) {
     );
   };
 
-  const handleAddEvent = async () => {
+  const handleSubmit = async () => {
     const result = validateForm(eventSchema, eventData);
     if (!result.success) {
       setErrors(result.errors || {});
@@ -91,7 +92,7 @@ export default function EventsTab({ apiFetch }) {
       return;
     }
 
-    if (!eventFile) {
+    if (!eventFile && !editingId) {
       toast({
         title: "Missing file",
         description: "Please select a poster/image",
@@ -108,10 +109,12 @@ export default function EventsTab({ apiFetch }) {
       formData.append("date", eventData.date);
       formData.append("location", eventData.location);
       formData.append("description", eventData.description);
-      formData.append("image", eventFile);
+      if (eventFile) {
+        formData.append("image", eventFile);
+      }
 
-      const response = await apiFetch("/events", {
-        method: "POST",
+      const response = await apiFetch(editingId ? `/events/${editingId}` : "/events", {
+        method: editingId ? "PUT" : "POST",
         body: formData,
       });
 
@@ -119,7 +122,7 @@ export default function EventsTab({ apiFetch }) {
 
       toast({
         title: "Success",
-        description: response.message || "Event created successfully",
+        description: response.message || `Event ${editingId ? "updated" : "created"} successfully`,
       });
 
       // Reset form
@@ -131,6 +134,7 @@ export default function EventsTab({ apiFetch }) {
       });
       setEventFile(null);
       setErrors({});
+      setEditingId(null);
 
       // Give backend a moment to save → then refresh list
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -148,14 +152,44 @@ export default function EventsTab({ apiFetch }) {
     }
   };
 
+  const handleEdit = (event) => {
+    setEventData({
+      title: event.title,
+      date: event.date ? new Date(event.date).toISOString().split('T')[0] : "",
+      location: event.location,
+      description: event.description,
+    });
+    setEditingId(event._id);
+    setEventFile(null); // Reset file input
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this event?")) return;
+    try {
+      await apiFetch(`/events/${id}`, { method: "DELETE" });
+      toast({ title: "Success", description: "Event deleted successfully" });
+      loadEvents();
+    } catch (err) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEventData({ title: "", date: "", location: "", description: "" });
+    setEventFile(null);
+    setEditingId(null);
+    setErrors({});
+  };
+
   return (
     <div className="space-y-8">
-      {/* ────────────────────────────────────────────────
-          CREATE EVENT FORM
-      ──────────────────────────────────────────────── */}
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>Create Event</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            {editingId ? "Edit Event" : "Create Event"}
+            {editingId && <Button variant="ghost" size="sm" onClick={handleCancelEdit}><X className="h-4 w-4 mr-2" /> Cancel</Button>}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -215,17 +249,17 @@ export default function EventsTab({ apiFetch }) {
           </div>
 
           <Button
-            onClick={handleAddEvent}
+            onClick={handleSubmit}
             className="w-full"
             disabled={isSubmitting || loadingEvents}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                Processing...
               </>
             ) : (
-              "Create Event"
+              editingId ? "Update Event" : "Create Event"
             )}
           </Button>
         </CardContent>
@@ -299,12 +333,13 @@ export default function EventsTab({ apiFetch }) {
                       </p>
 
                       <div className="flex gap-3 pt-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
                           Edit
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => handleDelete(event._id)}
                           className="text-destructive hover:text-destructive"
                         >
                           Delete

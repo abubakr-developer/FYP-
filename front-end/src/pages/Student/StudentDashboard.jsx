@@ -50,7 +50,7 @@ export default function StudentDashboard() {
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
               <TabsTrigger value="scholarships">Scholarships</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="events">Events & News</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile">

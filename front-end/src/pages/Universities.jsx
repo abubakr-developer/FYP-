@@ -1,60 +1,133 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";           // ← added
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { universities } from "@/data/mockData";
-import { Search, MapPin, Users, BookOpen, Star, ExternalLink } from "lucide-react";
+import { Search, MapPin, Users, BookOpen, Star, AlertCircle, Loader2, ExternalLink } from "lucide-react";
+// Removed useToast if you're no longer using it here
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Universities() {
+  const navigate = useNavigate();                        // ← added
+
+  const [universities, setUniversities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
+  useEffect(() => {
+    const fetchUniversities = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`${API_URL}/api/student/universities`);
+
+        if (!res.ok) {
+          throw new Error("Failed to load universities");
+        }
+
+        const data = await res.json();
+        const uniList = data.success ? data.universities || data.data || [] : [];
+
+        setUniversities(uniList);
+      } catch (err) {
+        console.error("Universities fetch error:", err);
+        setError("Could not load universities. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUniversities();
+  }, []);
+
+  // Extract unique cities & types for filters
+  const cities = ["all",'Lahore', 'Faisalabad', 'Multan', 'Rawalpindi', 'Gujranwala', 'Sialkot', 'Gujrat', 'Bahawalpur', 'Sargodha'];
+  const types = ["all", "Public", "Private"];
+
+  // Apply filters
   const filteredUniversities = universities.filter(uni => {
-    const matchesSearch = uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         uni.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCity = cityFilter === "all" || uni.city === cityFilter;
-    const matchesType = typeFilter === "all" || uni.type === typeFilter;
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch =
+      (uni.institutionName || "").toLowerCase().includes(searchLower) ||
+      (uni.city || "").toLowerCase().includes(searchLower) ||
+      (uni.address || "").toLowerCase().includes(searchLower);
+
+    const matchesCity = cityFilter === "all" || 
+      (uni.city || "").toLowerCase() === cityFilter.toLowerCase() ||
+      (uni.address || "").toLowerCase().includes(cityFilter.toLowerCase());
+
+    const matchesType = typeFilter === "all" || 
+      (uni.institutionType || "").toLowerCase() === typeFilter.toLowerCase();
+
     return matchesSearch && matchesCity && matchesType;
   });
 
-  const cities = ["all", ...new Set(universities.map(u => u.city))];
-  const types = ["all", "Public", "Private"];
+  const handleViewDetails = () => {
+    navigate("/studentlogin");                         // ← changed behavior
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading universities...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-5 w-5" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <Button variant="outline" className="mt-6" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Hero Section */}
+      {/* Hero + Filters */}
       <section className="py-12 px-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background">
         <div className="container max-w-6xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
             Explore <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Universities</span>
           </h1>
           <p className="text-lg text-muted-foreground text-center mb-8">
-            Discover {universities.length}+ universities across Punjab
+            Discover {universities.length} approved universities across Punjab
           </p>
 
-          {/* Search and Filters */}
           <Card className="border-2">
             <CardContent className="pt-6">
               <div className="grid md:grid-cols-3 gap-4">
-                <div className="md:col-span-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search universities..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or city..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
+
                 <Select value={cityFilter} onValueChange={setCityFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by city" />
@@ -67,6 +140,7 @@ export default function Universities() {
                     ))}
                   </SelectContent>
                 </Select>
+
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by type" />
@@ -86,73 +160,88 @@ export default function Universities() {
       </section>
 
       {/* Universities Grid */}
-      <section className="py-12 px-4">
+      <section className="py-12 px-4 flex-1">
         <div className="container max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredUniversities.map(university => (
-              <Card key={university.id} className="border-2 hover:shadow-lg transition-all hover:scale-105">
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="text-4xl">{university.logo}</div>
-                    <Badge variant={university.type === "Public" ? "default" : "secondary"}>
-                      {university.type}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-xl mb-2">{university.name}</CardTitle>
-                  <CardDescription className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <MapPin className="h-4 w-4" />
-                      <span>{university.city}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <span>{university.rating} Rating</span>
-                    </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {university.description}
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-4 py-4 border-t">
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <div className="text-sm">
-                        <p className="font-semibold">{university.students.toLocaleString()}</p>
-                        <p className="text-muted-foreground">Students</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
-                      <div className="text-sm">
-                        <p className="font-semibold">{university.programs}+</p>
-                        <p className="text-muted-foreground">Programs</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="text-sm">
-                      <p className="text-muted-foreground">Min. Percentage</p>
-                      <p className="font-semibold text-primary">{university.minPercentage}%</p>
-                    </div>
-                    <Button size="sm" variant="outline" asChild>
-                      <Link to={`/universities/${university.id}`}>
-                        View Details <ExternalLink className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredUniversities.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">
-                No universities found matching your criteria.
+          {filteredUniversities.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-xl font-medium text-muted-foreground">
+                No universities found matching your search.
               </p>
+              <Button variant="outline" className="mt-6" onClick={() => {
+                setSearchQuery("");
+                setCityFilter("all");
+                setTypeFilter("all");
+              }}>
+                Clear Filters
+              </Button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredUniversities.map((uni) => (
+                <Card 
+                  key={uni._id} 
+                  className="border-2 hover:shadow-xl transition-all hover:scale-[1.02] duration-300"
+                >
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-xl mb-1">
+                          {uni.institutionName || "Unnamed University"}
+                        </CardTitle>
+                        <CardDescription className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          {uni.city || uni.address?.split(",")?.pop()?.trim() || "N/A"}
+                        </CardDescription>
+                      </div>
+                      <Badge variant={uni.institutionType?.toLowerCase() === "public" ? "default" : "secondary"}>
+                        {uni.institutionType ? 
+                          uni.institutionType.charAt(0).toUpperCase() + uni.institutionType.slice(1) 
+                          : "Unknown"}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-1 mt-3">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      <span className="font-medium">{uni.rating || 0}/5</span>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {uni.description || "No description available."}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 py-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-semibold">{uni.programs?.length || 0}</p>
+                          <p className="text-xs text-muted-foreground">Programs</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-semibold">—</p>
+                          <p className="text-xs text-muted-foreground">Students</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <Button 
+                        size="sm"
+                        onClick={handleViewDetails}
+                        className="gap-2"
+                      >
+                        View Details 
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>

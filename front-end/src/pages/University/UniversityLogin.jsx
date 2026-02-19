@@ -60,6 +60,11 @@ export default function UniversityLogin() {
       if (response.data.token) {
         localStorage.setItem("universityToken", response.data.token);
       }
+      
+      // FIX: Store university details so Navbar can read them immediately
+      if (response.data.university) {
+        localStorage.setItem("user", JSON.stringify(response.data.university));
+      }
 
       navigate("/university-dashboard");
 

@@ -175,7 +175,7 @@ export default function UniversityDetail() {
                     <Card key={program.id} className="border-2">
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
-                          <span>{program.name}</span>
+                          <span>{program.programName}</span>
                           <Badge>{program.degree}</Badge>
                         </CardTitle>
                         <CardDescription>

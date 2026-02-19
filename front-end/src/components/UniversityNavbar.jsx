@@ -1,40 +1,77 @@
 import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function UniversityNavbar({ setActiveTab }) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [displayName, setDisplayName] = useState("University");
 
-  // Get logged-in university data from localStorage (same pattern as student)
-  const university = JSON.parse(localStorage.getItem("user")) || {};
+  useEffect(() => {
+    const fetchProfile = async () => {
+      // 1. Try Local Storage first for immediate display
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+        const university = storedUser.university || storedUser;
+        const localName = university.institutionName || university.universityName || university.name;
+        if (localName) setDisplayName(localName);
+      } catch (e) {
+        console.error("Error parsing user data", e);
+      }
 
-  // Adjust these keys based on what your university registration/login actually saves
-  const universityName =
-    university.universityName ||
-    university.name ||
-    university.institutionName ||
-    "University";   // fallback
+      // 2. Fetch fresh profile from API to ensure name is correct
+      const token = localStorage.getItem("universityToken") || localStorage.getItem("token");
+      if (token) {
+        try {
+          const res = await fetch(`${API_URL}/api/university/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success && data.university) {
+            const uni = data.university;
+            const apiName = uni.institutionName || uni.universityName;
+            if (apiName && typeof apiName === 'string') {
+              setDisplayName(apiName);
+              // Update local storage to persist
+              const existing = JSON.parse(localStorage.getItem("user")) || {};
+              // Ensure we update the correct structure (nested or flat)
+              const updated = existing.university
+                ? { ...existing, university: { ...existing.university, institutionName: apiName } }
+                : { ...existing, institutionName: apiName, ...uni };
+              localStorage.setItem("user", JSON.stringify(updated));
+            }
+          }
+        } catch (err) {
+          console.error("Navbar profile fetch error:", err);
+        }
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
 
     try {
+      const token = localStorage.getItem("universityToken") || localStorage.getItem("token");
       // Call your logout endpoint
-      const response = await fetch("/api/auth/logout", {
+      const response = await fetch(`${API_URL}/api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           // Include token if your university backend uses JWT in header
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
         },
         // credentials: "include",   // ← uncomment ONLY if using httpOnly cookies instead of localStorage
       });
 
       // We clear local data regardless of response status in most JWT setups
       localStorage.removeItem("token");
+      localStorage.removeItem("universityToken");
       localStorage.removeItem("user");
 
       // Redirect to landing / login page
@@ -48,6 +85,7 @@ export default function UniversityNavbar({ setActiveTab }) {
 
       // Fail-safe: still clear data and redirect
       localStorage.removeItem("token");
+      localStorage.removeItem("universityToken");
       localStorage.removeItem("user");
       navigate("/");
     } finally {
@@ -91,13 +129,7 @@ export default function UniversityNavbar({ setActiveTab }) {
             onClick={() => setActiveTab("events")}
             className="hover:text-primary transition-colors"
           >
-            Events
-          </button>
-          <button
-            onClick={() => setActiveTab("news")}
-            className="hover:text-primary transition-colors"
-          >
-            News
+            Events & News
           </button>
         </div>
 
@@ -105,7 +137,7 @@ export default function UniversityNavbar({ setActiveTab }) {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <User className="h-4 w-4 text-primary" />
-            <span className="hidden sm:inline">{universityName}</span>
+            <span className="hidden sm:inline">{displayName}</span>
           </div>
 
           <Button

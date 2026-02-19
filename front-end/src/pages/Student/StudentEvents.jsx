@@ -21,10 +21,17 @@ export default function StudentEvents() {
           setLoading(false);
           return;
         }
-        const res = await axios.get(`${API_URL}/api/student/events`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setEvents(res.data.data);
+        const [eventsRes, recommendationsRes] = await Promise.all([
+          axios.get(`${API_URL}/api/student/events`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${API_URL}/api/student/recommendations`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        const allEvents = eventsRes.data.data || [];
+        const eligibleUniIds = new Set((recommendationsRes.data.data?.eligible || []).map(u => u._id));
+        setEvents(allEvents.filter(e => eligibleUniIds.has(e.universityId)));
       } catch (err) {
         toast({ title: "Error", description: err.response?.data?.message || "Failed to load events.", variant: "destructive" });
       } finally {

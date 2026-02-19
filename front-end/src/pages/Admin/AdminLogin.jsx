@@ -46,8 +46,8 @@ export default function AdminLogin() {
 
     try {
       const response = await axios.post(
-        `${API_URL}/api/auth/login`,
-        { email: formData.email, password: formData.password },
+        `${API_URL}/api/superadmin/login`,
+        { email: formData.email.trim().toLowerCase(), password: formData.password },
         { withCredentials: true }
       );
 
@@ -66,6 +66,8 @@ export default function AdminLogin() {
         setIsSubmitting(false);
         return;
       }
+
+      localStorage.setItem("adminToken", response.data.token);
 
       toast({
         title: "Welcome",
@@ -123,14 +125,6 @@ export default function AdminLogin() {
           <Lock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
           <AlertDescription className="text-sm text-orange-900 dark:text-orange-200">
             <strong>Secure Access:</strong> This is a restricted area. Unauthorized access is prohibited.
-          </AlertDescription>
-        </Alert>
-
-        {/* Demo Alert */}
-        <Alert className="mb-6 border-primary/20 bg-primary/5">
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-sm">
-            <strong>Demo Mode:</strong> Enter any email and password to access the dashboard.
           </AlertDescription>
         </Alert>
 

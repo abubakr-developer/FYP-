@@ -1,4 +1,4 @@
-// utils/sendEmail.js   (or wherever you keep it)
+// utils/sendEmails.js
 import nodemailer from 'nodemailer';
 import 'dotenv/config';
 
@@ -36,6 +36,11 @@ transporter.verify((error, success) => {
   }
 });
 
+function isValidEmail(email) {
+  const regex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+  return regex.test(email);
+}
+
 export const sendApprovalEmail = async (university) => {
   try {
     const senderEmail = getEnv('EMAIL');
@@ -46,8 +51,8 @@ export const sendApprovalEmail = async (university) => {
       return false;
     }
 
-    if (!recipientEmail) {
-      console.error(`❌ EMAIL ERROR: University "${university.institutionName}" has no valid email address.`);
+    if (!recipientEmail || !isValidEmail(recipientEmail)) {
+      console.error(`❌ EMAIL ERROR: Invalid email address for university "${university.institutionName || '(unnamed)'}": ${recipientEmail}`);
       return false;
     }
 
@@ -99,8 +104,8 @@ export const sendRejectionEmail = async (university, reason) => {
       return false;
     }
 
-    if (!recipientEmail) {
-      console.error(`❌ EMAIL ERROR: University "${university.institutionName}" has no valid email address.`);
+    if (!recipientEmail || !isValidEmail(recipientEmail)) {
+      console.error(`❌ EMAIL ERROR: Invalid email address for university "${university.institutionName || '(unnamed)'}": ${recipientEmail}`);
       return false;
     }
 

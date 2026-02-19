@@ -103,6 +103,9 @@ export default function UniversityRegister() {
         description: response.data.message || "Your institution registration is pending approval.",
       });
 
+      // Save basic user data including institutionName to localStorage
+      localStorage.setItem("user", JSON.stringify({ institutionName: formData.institutionName }));
+
       navigate("/university-login");
 
       // Optional: store token if you want to auto-login after approval later

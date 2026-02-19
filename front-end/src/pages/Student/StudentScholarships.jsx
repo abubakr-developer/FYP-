@@ -22,10 +22,17 @@ export default function StudentScholarships() {
           setLoading(false);
           return;
         }
-        const res = await axios.get(`${API_URL}/api/student/scholarships`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setScholarships(res.data.data);
+        const [scholarshipsRes, recommendationsRes] = await Promise.all([
+          axios.get(`${API_URL}/api/student/scholarships`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${API_URL}/api/student/recommendations`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        const allScholarships = scholarshipsRes.data.data || [];
+        const eligibleUniIds = new Set((recommendationsRes.data.data?.eligible || []).map(u => u._id));
+        setScholarships(allScholarships.filter(s => eligibleUniIds.has(s.universityId)));
       } catch (err) {
         toast({ title: "Error", description: err.response?.data?.message || "Failed to load scholarships. Set your field of interest in profile.", variant: "destructive" });
       } finally {
@@ -43,13 +50,14 @@ export default function StudentScholarships() {
       {scholarships.map((s) => (
         <Card key={s._id} className="border-2">
           <CardHeader>
-            <CardTitle>{s.title}</CardTitle>
-            <CardDescription>{s.universityName}</CardDescription>
+            <CardDescription className="font-bold text-foreground">{s.universityName}</CardDescription>
+            <CardTitle>{s.name}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-primary font-semibold">{s.amount}</p>
+            <p className="text-primary font-semibold">Amount: {s.amount}</p>
+            {s.eligibility && <p className="text-sm mt-2"><span className="font-semibold">Eligibility:</span> {s.eligibility}</p>}
             {s.description && <p className="text-sm text-muted-foreground mt-2">{s.description}</p>}
-            <Button className="w-full mt-4">Apply</Button>
+            {/* <Button className="w-full mt-4">Apply</Button> */}
           </CardContent>
         </Card>
       ))}

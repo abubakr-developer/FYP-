@@ -1,18 +1,22 @@
-import User from '../models/user.js';
-import University from '../models/university.js';
-import { sendApprovalEmail, sendRejectionEmail } from '../utils/sendEmail.js';
+import User from "../models/user.js";
+import University from "../models/university.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { sendApprovalEmail, sendRejectionEmail } from "../utils/sendEmail.js";
 
 export const getPendingUniversities = async (req, res) => {
   try {
-    const pending = await University.find({ status: 'pending' })
-      .select('-password -__v') // don't send password
+    const pending = await University.find({ status: "pending" })
+      .select("-password -__v") // don't send password
       .sort({ createdAt: -1 })
       .lean();
 
     res.status(200).json(pending);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error - could not load pending universities" });
+    res
+      .status(500)
+      .json({ message: "Server error - could not load pending universities" });
   }
 };
 
@@ -26,8 +30,8 @@ export const approveUniversity = async (req, res) => {
     }
 
     if (university.status !== "pending") {
-      return res.status(400).json({ 
-        message: `This university is already ${university.status}` 
+      return res.status(400).json({
+        message: `This university is already ${university.status}`,
       });
     }
 
@@ -40,7 +44,9 @@ export const approveUniversity = async (req, res) => {
     // Try to send approval email
     let emailStatus = "not attempted";
     try {
-      console.log(`Attempting to send approval email to: ${university.officialEmail}`);
+      console.log(
+        `Attempting to send approval email to: ${university.officialEmail}`,
+      );
       const sent = await sendApprovalEmail(university);
       emailStatus = sent ? "sent" : "failed";
     } catch (emailErr) {
@@ -55,8 +61,8 @@ export const approveUniversity = async (req, res) => {
         _id: university._id,
         institutionName: university.institutionName,
         officialEmail: university.officialEmail,
-        status: university.status
-      }
+        status: university.status,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -64,7 +70,6 @@ export const approveUniversity = async (req, res) => {
   }
 };
 
-// Reject university registration
 export const rejectUniversity = async (req, res) => {
   try {
     const { universityId } = req.params;
@@ -76,8 +81,8 @@ export const rejectUniversity = async (req, res) => {
     }
 
     if (university.status !== "pending") {
-      return res.status(400).json({ 
-        message: `This university is already ${university.status}` 
+      return res.status(400).json({
+        message: `This university is already ${university.status}`,
       });
     }
 
@@ -90,7 +95,9 @@ export const rejectUniversity = async (req, res) => {
     // Try to send rejection email
     let emailStatus = "not attempted";
     try {
-      console.log(`Attempting to send rejection email to: ${university.officialEmail}`);
+      console.log(
+        `Attempting to send rejection email to: ${university.officialEmail}`,
+      );
       const sent = await sendRejectionEmail(university, reason);
       emailStatus = sent ? "sent" : "failed";
     } catch (emailErr) {
@@ -105,8 +112,8 @@ export const rejectUniversity = async (req, res) => {
         _id: university._id,
         institutionName: university.institutionName,
         officialEmail: university.officialEmail,
-        status: university.status
-      }
+        status: university.status,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -118,8 +125,10 @@ export const rejectUniversity = async (req, res) => {
 export const getAnalytics = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const students = await User.countDocuments({ role: 'student' });
-    const universityAdmins = await User.countDocuments({ role: 'universityAdmin' });
+    const students = await User.countDocuments({ role: "student" });
+    const universityAdmins = await User.countDocuments({
+      role: "universityAdmin",
+    });
     const universities = await University.countDocuments();
 
     // Add more: e.g., applications count if you have Application model
@@ -137,14 +146,72 @@ export const getAnalytics = async (req, res) => {
     });
   } catch (error) {
     console.error("Analytics error:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 
-// Manage Users: Get All Users
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Please provide email and password" });
+    }
+
+    // Normalize email (trim + lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Find user and ensure they are a superAdmin
+    const user = await User.findOne({
+      email: normalizedEmail,
+      role: "superAdmin",
+    });
+
+    if (!user) {
+      // Optional: add more detailed logging in development only
+      // console.log(`[SuperAdmin Login] No superadmin found for: ${normalizedEmail}`);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      // console.log(`[SuperAdmin Login] Password mismatch for: ${normalizedEmail}`);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "1d" },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Super Admin Login Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// Get All Users
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: { $ne: 'superAdmin' } }).select('-password'); // Exclude superAdmins & passwords
+    const users = await User.find({ role: { $ne: "superAdmin" } }).select(
+      "-password",
+    ); // Exclude superAdmins & passwords
 
     return res.status(200).json({
       message: "Users fetched successfully",
@@ -153,7 +220,9 @@ export const getAllUsers = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching users:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 
@@ -164,14 +233,19 @@ export const updateUser = async (req, res) => {
     const { name, phoneNo, country, role, isActive } = req.body; // e.g., for compliance/ban
 
     const user = await User.findById(userId);
-    if (!user || user.role === 'superAdmin') {
-      return res.status(404).json({ message: "User not found or cannot update super admin.", success: false });
+    if (!user || user.role === "superAdmin") {
+      return res
+        .status(404)
+        .json({
+          message: "User not found or cannot update super admin.",
+          success: false,
+        });
     }
 
     if (name) user.name = name;
     if (phoneNo) user.phoneNo = phoneNo;
     if (country) user.country = country;
-    if (role && ['student', 'universityAdmin'].includes(role)) user.role = role;
+    if (role && ["student", "universityAdmin"].includes(role)) user.role = role;
     if (isActive !== undefined) user.isActive = isActive; // For ban/compliance (add isActive field to model)
 
     await user.save();
@@ -183,7 +257,9 @@ export const updateUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating user:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 
@@ -193,12 +269,17 @@ export const deleteUser = async (req, res) => {
     const { userId } = req.params;
 
     const user = await User.findById(userId);
-    if (!user || user.role === 'superAdmin') {
-      return res.status(404).json({ message: "User not found or cannot delete super admin.", success: false });
+    if (!user || user.role === "superAdmin") {
+      return res
+        .status(404)
+        .json({
+          message: "User not found or cannot delete super admin.",
+          success: false,
+        });
     }
 
     // If universityAdmin, optionally delete linked university
-    if (user.role === 'universityAdmin') {
+    if (user.role === "universityAdmin") {
       await University.deleteOne({ adminId: userId });
     }
 
@@ -210,7 +291,9 @@ export const deleteUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting user:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 
@@ -226,7 +309,9 @@ export const getAllUniversities = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching universities:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 
@@ -238,7 +323,9 @@ export const updateUniversity = async (req, res) => {
 
     const university = await University.findById(universityId);
     if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
+      return res
+        .status(404)
+        .json({ message: "University not found.", success: false });
     }
 
     if (name) university.name = name;
@@ -254,7 +341,9 @@ export const updateUniversity = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating university:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };
 
@@ -265,7 +354,9 @@ export const deleteUniversity = async (req, res) => {
 
     const university = await University.findById(universityId);
     if (!university) {
-      return res.status(404).json({ message: "University not found.", success: false });
+      return res
+        .status(404)
+        .json({ message: "University not found.", success: false });
     }
 
     // Optionally delete linked admin user
@@ -281,6 +372,8 @@ export const deleteUniversity = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting university:", error);
-    return res.status(500).json({ message: "Internal server error", success: false });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", success: false });
   }
 };

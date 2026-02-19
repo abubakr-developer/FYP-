@@ -24,7 +24,7 @@ mongoose.connect(process.env.MONGODB_URI)
       firstName: 'Super',
       lastName: 'Admin',
       email: email.toLowerCase(),
-      phone: '0000000000',
+      phoneNo: '0000000000',
       password: hashPassword,
       role: 'superAdmin',
     });

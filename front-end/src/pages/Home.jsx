@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -16,8 +17,25 @@ import {
   CheckCircle2
 } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export default function Home() {
   const [isRoleSelectionOpen, setIsRoleSelectionOpen] = useState(false);
+  const [stats, setStats] = useState({ universities: 0, students: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/superadmin/public/stats`);
+        if (res.data.success) {
+          setStats(res.data.stats);
+        }
+      } catch (error) {
+        console.error("Failed to fetch stats", error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -70,21 +88,14 @@ export default function Home() {
                       <Building2 className="h-5 w-5 text-primary" />
                       <span className="text-sm">Universities</span>
                     </div>
-                    <span className="text-2xl font-bold">100+</span>
+                    <span className="text-2xl font-bold">{stats.universities}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Users className="h-5 w-5 text-primary" />
-                      <span className="text-sm">Students Admissioned</span>
+                      <span className="text-sm">Students</span>
                     </div>
-                    <span className="text-2xl font-bold">10K+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Award className="h-5 w-5 text-primary" />
-                      <span className="text-sm">Scholarships</span>
-                    </div>
-                    <span className="text-2xl font-bold">500+</span>
+                    <span className="text-2xl font-bold">{stats.students}</span>
                   </div>
                 </CardContent>
               </Card>

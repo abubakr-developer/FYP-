@@ -4,22 +4,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import validator from "validator"
-import otpGenerator from "otp-generator"
+import otpGenerator from "otp-generator";
 
 export const register = async (req, res) => {
   try {
-    // Debug: Log the incoming request body
     console.log("Received req.body:", req.body);
-
-    // Validate request body
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Request body is missing or empty",
-      });
-    }
-
-    // Destructure all fields from req.body (matching frontend field names)
+    
     const { 
       firstName, 
       lastName, 
@@ -30,207 +20,109 @@ export const register = async (req, res) => {
       percentage 
     } = req.body;
 
-    // Validate required fields
+    // 1. Validation
     if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required",
-      });
+      return res.status(400).json({ message: "Please fill all required fields" });
     }
 
-    // Validate passwords match
     if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Passwords do not match",
-      });
+      return res.status(400).json({ message: "Passwords do not match" });
     }
 
-    // Validate password strength (matching frontend validation)
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 8 characters with uppercase, lowercase, and number",
-      });
+    // 2. Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid email format",
-      });
-    }
+    // 3. Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Validate phone number (basic validation)
-    if (phone.length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid phone number",
-      });
-    }
-
-    // Validate percentage if provided
-    if (percentage !== undefined && percentage !== null && percentage !== "") {
-      const percentageNum = parseFloat(percentage);
-      if (isNaN(percentageNum) || percentageNum < 0 || percentageNum > 100) {
-        return res.status(400).json({
-          success: false,
-          message: "Percentage must be between 0 and 100",
-        });
-      }
-    }
-
-    // Check if email exists
-    const isEmailExist = await User.findOne({ email: email.toLowerCase() });
-    if (isEmailExist) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already exists",
-      });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password.trim(), 10);
-
-    // Create new user
-    const user = new User({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.toLowerCase().trim(),
-      phone: phone.trim(),
+    // 4. Create User (Use 'User' model, not 'Student')
+    const user = await User.create({
+      firstName,
+      lastName,
+      email,
+      phone,
       password: hashedPassword,
-      percentage: percentage ? parseFloat(percentage) : null,
+      // Map 'percentage' from frontend to 'intermediatePercentage' in DB
+      intermediatePercentage: percentage, 
+      role: 'student'
     });
 
-    await user.save();
+    // 5. Generate Token
+    const token = jwt.sign(
+      { id: user._id, role: user.role }, 
+      process.env.JWT_SECRET_KEY, 
+      { expiresIn: '1d' }
+    );
 
-    // Validate JWT secret
-    if (!process.env.JWT_SECRET_KEY) {
-      return res.status(500).json({
-        success: false,
-        message: "JWT secret key is not configured",
-      });
-    }
-
-    // Create JWT token
-    // Include role in token to allow role-based middleware to work without extra DB lookups
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "24h", // Extended to 24h for better UX
-    });
-
-    return res.status(201).json({
+    // 6. Send Response
+    res.status(201).json({
       success: true,
+      message: "Student registered successfully",
+      token,
       user: {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        phone: user.phone,
-        percentage: user.percentage,
-      },
-      token,
-      message: "User registered successfully",
+        role: user.role
+      }
     });
+
   } catch (error) {
-    console.error("Registration Error:", {
-      message: error.message,
-      stack: error.stack,
-      body: req.body,
-    });
-
-    // Handle Mongoose validation errors
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        success: false,
-        message: Object.values(error.errors).map(e => e.message).join(", "),
-      });
-    }
-
-    // Handle duplicate key errors
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Email or phone already exists",
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    console.error("Registration Error:", error);
+    res.status(500).json({ 
+      message: "Internal Server Error", 
+      error: error.message 
     });
   }
 };
 
 export const login = async (req, res) => {
   try {
-    // Log incoming login attempt (mask password for security)
-    console.log("Login attempt:", { email: req.body?.email });
-
-    if (!req.body || Object.keys(req.body).length === 0) {
-      console.error("Login Error: missing body", { body: req.body });
-      return res.status(400).json({
-        success: false,
-        message: "Request body is missing or empty",
-      });
-    }
-
     const { email, password } = req.body;
-
-    if (!email) {
-      console.error("Login Error: missing email", { body: req.body });
-      return res.status(400).json({ success: false, message: "Email is required" });
-    }
-    if (!password) {
-      console.error("Login Error: missing password", { email });
-      return res.status(400).json({ success: false, message: "Password is required" });
+    
+    if (!email || !password) {
+      return res.status(400).json({ message: "Please provide email and password" });
     }
 
-    // Validate JWT secret is configured before proceeding
-    if (!process.env.JWT_SECRET_KEY) {
-      console.error("Login Error: JWT_SECRET_KEY is not configured.");
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error: JWT secret not configured",
-      });
-    }
-
-    // Normalize email lookup
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email });
     if (!user) {
-      console.error("Login Error: user not found", { email });
-      return res.status(400).json({ success: false, message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      console.error("Login Error: invalid password", { email });
-      return res.status(400).json({ success: false, message: "Invalid password" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Include role in token to allow role-based middleware checks
     const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET_KEY
+      { id: user._id, role: user.role }, 
+      process.env.JWT_SECRET_KEY, 
+      { expiresIn: '1d' }
     );
 
-    // Set auth cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role
+      }
     });
-
-    return res.status(200).json({ success: true, user, token });
-
   } catch (error) {
-    console.error("Login Error:", { message: error.message, stack: error.stack });
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Login Error:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 // Logout: clears the auth cookie
 export const logout = async (req, res) => {
@@ -289,7 +181,7 @@ export const forgetPassword = async (req, res) => {
 
     const otp = otpGenerator.generate(6, {
     digits : true,
-    lowerCaseAlpabets : true,
+    lowerCaseAlphabets : false,
     upperCaseAlphabets : false,
     specialChars : false,
   })
@@ -335,16 +227,16 @@ export const forgetPassword = async (req, res) => {
   }
 };
 
-// function generateOTP(lenght){
-//   const digits = '0123456789';
-//   let otp = '';
-//   for (let i ; i < lenght; i++){
-//     otp =+ digits[Math.floor(Math.random() * 10)];
-//   }
-//   return otp;
-// }
-// const otp = generateOTP(6);
-// console.log(otp);
+function generateOTP(lenght){
+  const digits = '0123456789';
+  let otp = '';
+  for (let i ; i < lenght; i++){
+    otp =+ digits[Math.floor(Math.random() * 10)];
+  }
+  return otp;
+}
+const otp = generateOTP(6);
+console.log(otp);
 
 export const resetPassword = async (req, res) => {
   try {
@@ -410,7 +302,7 @@ if (Date.now() > storedData.expiry){
   
   return res.status(400).json({ error: 'OTP has expired' });
 }
-if (storedData.otp !== otp) {
+if (storedData.otp.toString() !== otp.toString()) {
   return res.status(400).json({ error: 'Invalid OTP' });
   }
   return res.json({ message: 'OTP verified successfully' });

@@ -1,7 +1,12 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-const universitySchema = new mongoose.Schema({
+const universitySchema = new mongoose.Schema({              
+  admissionWebsite: {                                 
+    type: String,
+    trim: true,
+    default: '',
+  },
   // Basic information
   institutionName: {
     type: String,
@@ -50,10 +55,11 @@ const universitySchema = new mongoose.Schema({
     trim: true,
   },
 
-  // You might want to split address into structured fields later
-  // city: String,
-  // province: String,
-  // postalCode: String,
+  city: {
+    type: String,
+    enum: ['Lahore', 'Faisalabad', 'Multan', 'Rawalpindi', 'Gujranwala', 'Sialkot', 'Gujrat', 'Bahawalpur', 'Sargodha'],
+    trim: true,
+  },
 
   institutionType: {
     type: String,
@@ -62,11 +68,9 @@ const universitySchema = new mongoose.Schema({
     required: true,
   },
 
-  // Security – password should NEVER be stored plain text
   password: {
     type: String,
     required: [true, 'Password is required'],
-    // Note: You MUST hash this before saving (use bcrypt in pre-save hook)
     select: false, // never return password in queries by default
   },
 
@@ -98,6 +102,9 @@ programs: {
       programName: { type: String, required: true },
       duration: { type: String },
       eligibilityCriteria: { type: String },
+      minPercentage: { type: Number, default: 0 },
+      maxPercentage: { type: Number, default: 100 },
+      isActive: { type: Boolean, default: true },
       fee: { type: Number, default: 0 },
       seats: { type: Number, default: 0 },    }],
     default: []
@@ -124,6 +131,13 @@ programs: {
       posterUrl:    { type: String },    // optional
     }],
     default: []
+  },
+
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
   },
 
   // Optional: logo / banner
@@ -189,4 +203,3 @@ const eventSchema = new mongoose.Schema({
 
 const University = mongoose.model('University', universitySchema);
 export default University;
-

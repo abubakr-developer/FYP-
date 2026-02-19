@@ -170,11 +170,14 @@ export default function StudentProfile() {
               <SelectValue placeholder="Select your interest" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="Faculty of Computing & Information Technology">Faculty of Computing & Information Technology</SelectItem>
+              <SelectItem value="Faculty of Engineering & Architecture">Faculty of Engineering & Architecture</SelectItem>
+              <SelectItem value="Faculty of Humanities & Social Sciences">Faculty of Humanities & Social Sciences</SelectItem>
+              <SelectItem value="Faculty of Law">Faculty of Law</SelectItem>
+              <SelectItem value="Faculty of Management & Administrative Sciences">Faculty of Management & Administrative Sciences</SelectItem>
               <SelectItem value="Faculty of Sciences">Faculty of Sciences</SelectItem>
-              <SelectItem value="Faculty of Computing and Information Technology">Faculty of Computing and Information Technology</SelectItem>
-              <SelectItem value="Faculty of Humanities and Social Sciences">Faculty of Humanities and Social Sciences</SelectItem>
-              <SelectItem value="Faculty of Textile and Fashion Designing">Faculty of Textile and Fashion Designing</SelectItem>
-              <SelectItem value="Faculty of Pharmacy and Allied Health Sciences">Faculty of Pharmacy and Allied Health Sciences</SelectItem>
+              <SelectItem value="Faculty of Pharmacy & Allied Health Sciences">Faculty of Pharmacy & Allied Health Sciences</SelectItem>
+              <SelectItem value="Faculty of Textile & Fashion Designing">Faculty of Textile & Fashion Designing</SelectItem>
             </SelectContent>
           </Select>
           {renderError("fieldOfInterest")}

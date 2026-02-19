@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -87,16 +93,16 @@ export default function StudentLogin() {
       });
 
       // Redirect after short delay for better UX
-    setTimeout(() => {
-      setIsSubmitting(false);
-      navigate("/student-dashboard");
-    }, 800);
-
+      setTimeout(() => {
+        setIsSubmitting(false);
+        navigate("/student-dashboard");
+      }, 800);
     } catch (error) {
       console.error("Login error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to connect to the server. Please try again.",
+        description:
+          error.message || "Failed to connect to the server. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -118,8 +124,8 @@ export default function StudentLogin() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-cyan-50 to-background dark:from-blue-950/20 dark:via-cyan-950/10 dark:to-background">
       <div className="w-full max-w-md">
         {/* Back Button */}
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="inline-flex items-center space-x-2 mb-6 text-sm text-muted-foreground hover:text-primary transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -156,9 +162,9 @@ export default function StudentLogin() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="student-email">Email Address</Label>
-              <Input 
-                id="student-email" 
-                type="email" 
+              <Input
+                id="student-email"
+                type="email"
                 placeholder="student@example.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -171,12 +177,15 @@ export default function StudentLogin() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="student-password">Password</Label>
-                <Link to="#" className="text-sm text-primary hover:underline">
-                  Forgot?
+                <Link
+                  to="/student-forgot-password"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot password?
                 </Link>
               </div>
-              <Input 
-                id="student-password" 
+              <Input
+                id="student-password"
                 type="password"
                 placeholder="Enter your password"
                 value={formData.password}
@@ -187,8 +196,8 @@ export default function StudentLogin() {
               {renderError("password")}
             </div>
 
-            <Button 
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600" 
+            <Button
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
               onClick={handleLogin}
               disabled={isSubmitting}
             >

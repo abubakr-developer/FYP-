@@ -5,7 +5,6 @@ import User from '../models/user.js';
 import University from '../models/university.js';
 import {login} from '../controller/superAdminController.js'
 import {
-  getAnalytics,
   getAllUsers, 
   updateUser,
   deleteUser,

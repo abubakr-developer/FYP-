@@ -100,10 +100,12 @@ export const programSchema = z.object({
   seats: z.number().min(0, "Seats must be non-negative").optional(),
 });
 
-// Updated scholarshipSchema (changed title to name, added eligibility, amount as number)
+// Updated scholarshipSchema 
 export const scholarshipSchema = z.object({
   name: z.string().min(3, "Name is required"),
-  amount: z.number().min(0, "Amount must be positive"),
+  percentage: z.number()
+    .min(0, "Percentage cannot be negative")
+    .max(100, "Percentage cannot exceed 100"),
   deadline: z.string().min(10, "Deadline is required"),
   description: z.string().min(10, "Description is required"),
   eligibility: z.string().min(10, "Eligibility is required"),

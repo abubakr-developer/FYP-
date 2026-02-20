@@ -58,21 +58,21 @@ export default function AdminNavbar({ activeTab, setActiveTab }) {
           <Button
             variant="ghost"
             onClick={() => setActiveTab && setActiveTab("students")}
-            className={`hover:text-primary transition-colors ${activeTab === "students" ? "text-primary font-bold" : ""}`}
+            className={`hover:text-primary hover:bg-white/10 transition-colors ${activeTab === "students" ? "text-primary hover:bg-white/10 font-bold" : ""}`}
           >
             Students
           </Button>
           <Button
             variant="ghost"
             onClick={() => setActiveTab && setActiveTab("universities")}
-            className={`hover:text-primary transition-colors ${activeTab === "universities" ? "text-primary font-bold" : ""}`}
+            className={`hover:text-primary hover:bg-white/10 transition-colors ${activeTab === "universities" ? " hover:bg-white/10 text-primary font-bold" : ""}`}
           >
             Universities
           </Button>
           <Button
             variant="ghost"
             onClick={() => setActiveTab && setActiveTab("approvals")}
-            className={`hover:text-primary transition-colors ${activeTab === "approvals" ? "text-primary font-bold" : ""}`}
+            className={`hover:text-primary hover:bg-white/10 transition-colors ${activeTab === "approvals" ? "text-primary hover:bg-white/10 font-bold" : ""}`}
           >
             Pending Approvals
           </Button>

@@ -1,6 +1,8 @@
 import University from "../models/university.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { sendOtpEmail } from "../utils/sendEmail.js";
 
 
 function getProgramFaculty(programName) {
@@ -148,7 +150,7 @@ if (existingDeleted) {
       website,
       address,
       institutionType,
-      password, // Pass plain password; model pre-save hook will hash it
+      password,
       status: 'pending',
       isApproved: true,
       approvalStatus: 'approved',
@@ -269,6 +271,68 @@ export const loginUniversity = async (req, res) => {
   }
 };
 
+export const forgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const university = await University.findOne({ officialEmail: email.toLowerCase().trim() });
+    if (!university) {
+      return res.status(404).json({ message: "Email not found in university records" });
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    
+    university.otp = otp;
+    university.otpExpires = Date.now() + 10 * 60 * 1000;
+    await university.save();
+
+    const emailSent = await sendOtpEmail(university.officialEmail, otp);
+    
+    if (!emailSent) {
+      return res.status(500).json({ message: "Failed to send OTP email" });
+    }
+
+    res.status(200).json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("University Forget Password Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Find University with matching OTP and check expiry
+    const university = await University.findOne({
+      officialEmail: email.toLowerCase().trim(),
+      otp: otp,
+      otpExpires: { $gt: Date.now() } 
+    }).select("+otp +otpExpires");
+
+    if (!university) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    university.password = newPassword;
+    
+    // Clear OTP fields
+    university.otp = undefined;
+    university.otpExpires = undefined;
+    await university.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error("University Reset Password Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getProfile = async (req, res) => {
   try {
     const university = await University.findById(req.user._id).select('-password');
@@ -280,7 +344,6 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch profile" });
   }
 };
-
 
 export const updateProfile = async (req, res) => {
   try {
@@ -306,10 +369,6 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PROGRAMS
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const addProgram = async (req, res) => {
   try {
@@ -365,10 +424,6 @@ export const getPrograms = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCHOLARSHIPS
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const addScholarship = async (req, res) => {
   try {
     const universityId = req.user._id;
@@ -396,19 +451,12 @@ export const getScholarships = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// EVENTS
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const addEvent = async (req, res) => {
   try {
     const universityId = req.user._id;
     const { title, date, location, description } = req.body;
     
-    // Handle image upload (req.file is populated by multer)
-    const posterUrl = req.file ? req.file.path : null; 
-
-    const newEvent = { title, date, location, description, posterUrl };
+    const newEvent = { title, date, location, description };
 
     const updatedUni = await University.findByIdAndUpdate(
       universityId,
@@ -431,10 +479,6 @@ export const getEvents = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch events" });
   }
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// UPDATE & DELETE OPERATIONS
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const deleteProgram = async (req, res) => {
   try {
@@ -538,7 +582,7 @@ export const updateScholarship = async (req, res) => {
       {
         $set: {
           "scholarships.$.name": updates.name,
-          "scholarships.$.amount": updates.amount,
+          "scholarships.$.percentage": updates.percentage,
           "scholarships.$.deadline": updates.deadline,
           "scholarships.$.description": updates.description,
           "scholarships.$.eligibility": updates.eligibility
@@ -584,10 +628,6 @@ export const updateEvent = async (req, res) => {
       "events.$.location": location,
       "events.$.description": description
     };
-
-    if (req.file) {
-      updateFields["events.$.posterUrl"] = req.file.path;
-    }
 
     const updatedUni = await University.findOneAndUpdate(
       { _id: universityId, "events._id": eventId },

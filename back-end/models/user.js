@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
       max: [100, "Percentage cannot exceed 100"],
       default: null,
     },
-    // Inside userSchema
+ 
     fieldOfInterest: {
       type: String,
       enum: [
@@ -94,7 +94,6 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-// Create indexes for better query performance
 userSchema.index({ phone: 1 });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);

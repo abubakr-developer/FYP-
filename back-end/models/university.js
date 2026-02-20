@@ -7,7 +7,7 @@ const universitySchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
-  // Basic information
+
   institutionName: {
     type: String,
     required: [true, 'Institution name is required'],
@@ -71,17 +71,15 @@ const universitySchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required'],
-    select: false, // never return password in queries by default
+    select: false, 
   },
 
-  // Relationship with admin user
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: false,
   },
 
-  // Status workflow
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
@@ -113,11 +111,11 @@ programs: {
   scholarships: {
     type: [{
       name:          { type: String, required: true },
-      amount:        { type: Number, default: 0 },
+      percentage:    { type: Number, default: 0 },
       deadline:      { type: Date },
       description:   { type: String },
       eligibility:   { type: String },
-      documentUrl:   { type: String },   // optional for future file uploads
+      documentUrl:   { type: String }, 
     }],
     default: []
   },
@@ -128,7 +126,6 @@ programs: {
       date:         { type: Date, required: true },
       location:     { type: String },
       description:  { type: String },
-      posterUrl:    { type: String },    // optional
     }],
     default: []
   },
@@ -140,16 +137,18 @@ programs: {
     max: 5
   },
 
-  // Optional: logo / banner
   logo: {
-    type: String, // URL or public_id from cloudinary
+    type: String, 
   },
+
+
+  otp: { type: String, select: false },
+  otpExpires: { type: Date, select: false },
 
 }, {
   timestamps: true,
 });
 
-// Optional: auto-initialize programs array if missing
 universitySchema.pre('save', function(next) {
   if (!this.programs) {
     this.programs = [];
@@ -157,7 +156,6 @@ universitySchema.pre('save', function(next) {
   next();
 });
 
-// Optional: password hashing middleware (VERY IMPORTANT!)
 universitySchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
 
@@ -170,35 +168,33 @@ universitySchema.pre('save', async function(next) {
   }
 });
 
-// Method to compare password
 universitySchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
 
 const programSchema = new mongoose.Schema({
-  programName: { type: String, required: true }, // e.g. "BS Computer Science", "BS-IT", "LLB"
-  eligibilityCriteria: { type: Number, required: true, min: 0, max: 100 }, // minimum % required
+  programName: { type: String, required: true }, 
+  eligibilityCriteria: { type: Number, required: true, min: 0, max: 100 }, 
   fee: { type: Number },
   duration: { type: String },
   seats: { type: Number },
 });
 
 const scholarshipSchema = new mongoose.Schema({
-  name: { type: String, required: true }, // e.g., "Merit Scholarship"
+  name: { type: String, required: true }, 
   description: { type: String },
-  amount: { type: Number },
+  percentage: { type: Number },
   deadline: { type: Date },
-  eligibility: { type: String }, // e.g., "Min 80% marks"
-  documentUrl: { type: String }, // Cloudinary URL for any doc
+  eligibility: { type: String }, 
+  documentUrl: { type: String }, 
 });
 
 const eventSchema = new mongoose.Schema({
-  title: { type: String, required: true }, // e.g., "Career Workshop"
+  title: { type: String, required: true },
   description: { type: String },
   date: { type: Date, required: true },
   location: { type: String },
-  posterUrl: { type: String }, // Cloudinary URL
 });
 
 const University = mongoose.model('University', universitySchema);

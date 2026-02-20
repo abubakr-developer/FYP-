@@ -20,7 +20,7 @@ export const register = async (req, res) => {
       percentage 
     } = req.body;
 
-    // 1. Validation
+    //  Validation
     if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
       return res.status(400).json({ message: "Please fill all required fields" });
     }
@@ -29,36 +29,34 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Passwords do not match" });
     }
 
-    // 2. Check if user exists
+    //  Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // 3. Hash password
+    // code for Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 4. Create User (Use 'User' model, not 'Student')
+    //  Create Student user
     const user = await User.create({
       firstName,
       lastName,
       email,
       phone,
       password: hashedPassword,
-      // Map 'percentage' from frontend to 'intermediatePercentage' in DB
       intermediatePercentage: percentage, 
       role: 'student'
     });
 
-    // 5. Generate Token
+    //  Generate Token
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
       process.env.JWT_SECRET_KEY, 
       { expiresIn: '1d' }
     );
 
-    // 6. Send Response
     res.status(201).json({
       success: true,
       message: "Student registered successfully",
@@ -123,8 +121,6 @@ export const login = async (req, res) => {
   }
 };
 
-
-// Logout: clears the auth cookie
 export const logout = async (req, res) => {
   try {
     res.clearCookie("token", {
@@ -146,7 +142,6 @@ export const forgetPassword = async (req, res) => {
        
     const { email } = req.body;
 
-    // Validate email input
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -161,7 +156,6 @@ export const forgetPassword = async (req, res) => {
       });
     }
 
-    // Check if user exists
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(404).json({
@@ -169,15 +163,6 @@ export const forgetPassword = async (req, res) => {
         message: "Email not found",
       });
     }
-
-    // Generate JWT token
-    // const token = jwt.sign(
-    //   { id: user._id },
-    //   process.env.JWT_SECRET_KEY,
-    //   { expiresIn: "10m" }
-    // ); 
-
-    // other option
 
     const otp = otpGenerator.generate(6, {
     digits : true,
@@ -230,7 +215,7 @@ export const forgetPassword = async (req, res) => {
 function generateOTP(lenght){
   const digits = '0123456789';
   let otp = '';
-  for (let i ; i < lenght; i++){
+  for (let i = 0; i < lenght; i++){
     otp =+ digits[Math.floor(Math.random() * 10)];
   }
   return otp;
@@ -245,17 +230,6 @@ export const resetPassword = async (req, res) => {
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
     }
-
-    // Verify token
-    // const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
-    // Find user by ID
-//      const storedData = otpStorage.get(email);
-// console.log("what is user otp:", otp)
-//   console.log(storedData)
-//     if(!otp==storedData.otp){
-//  return res.status(404).json({ message: "Otp not found" });
-//     }
     const user = await User.findOne({ email:email });
     console.log("what is decoded user", user)
     if (!user) {
@@ -267,7 +241,6 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "New password is required" });
     }
 
-    // Hash new password
     const salt = await bcrypt.genSalt(10);
       const trimmedNewPassword = req.body.newPassword.trim();
       const hashedPassword = await bcrypt.hash(trimmedNewPassword, salt);
@@ -278,10 +251,6 @@ export const resetPassword = async (req, res) => {
 
     return res.status(200).json({ message: "Password updated" });
   } catch (error) {
-    // console.error("Error in resetPassword:", error);
-    // if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
-    //   return res.status(401).json({ message: "Invalid or expired token" });
-    // }
     return res.status(500).json({ message: error.message || "Internal server error" });
   }
 };
@@ -315,14 +284,13 @@ if (storedData.otp.toString() !== otp.toString()) {
   }
 };
 
-// Update profile (provided, unchanged)
+// Update profile 
 export const updateProfile = async (req, res) => {
   console.log(">>>>>>>>>>>>>>", req.body);
   try {
     const { id } = req.params;
     const updateData = {};
 
-    // Dynamically add fields to update only if provided in req.body
     if (req.body.name) {
       updateData.name = req.body.name;
     }
@@ -362,7 +330,7 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-// Fetch current user (assumed for /api/auth/me)
+// Fetch current user 
 export const getCurrentUser = async (req, res) => {
   try {
     console.log(req.user._id)

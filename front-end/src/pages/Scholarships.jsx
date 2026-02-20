@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, DollarSign, Calendar, CheckCircle, Award, AlertCircle, Loader2, ExternalLink } from "lucide-react";
+import { Search, Percent, Calendar, CheckCircle, Award, AlertCircle, Loader2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -194,10 +194,10 @@ export default function Scholarships() {
 
                     <div className="grid md:grid-cols-3 gap-4 pt-4 border-t">
                       <div className="flex items-start gap-3">
-                        <DollarSign className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                        <Percent className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-sm font-semibold">Amount</p>
-                          <p className="text-sm text-muted-foreground">{sch.amount || "N/A"}</p>
+                          <p className="text-sm font-semibold">Scholarship</p>
+                          <p className="text-sm text-muted-foreground">{sch.percentage ? `${sch.percentage}%` : "N/A"}</p>
                         </div>
                       </div>
 
@@ -228,33 +228,6 @@ export default function Scholarships() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-                      <Button 
-                        variant="default" 
-                        className="flex-1"
-                        asChild
-                      >
-                        <Link to={`/universitydetailinformation/${sch.universityId}`}>
-                          View University <ExternalLink className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-
-                      {sch.admissionWebsite && (
-                        <Button 
-                          variant="outline" 
-                          className="flex-1"
-                          asChild
-                        >
-                          <a 
-                            href={sch.admissionWebsite} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                          >
-                            Apply Here <ExternalLink className="ml-2 h-4 w-4" />
-                          </a>
-                        </Button>
-                      )}
-                    </div>
                   </CardContent>
                 </Card>
               ))}

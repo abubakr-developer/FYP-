@@ -143,3 +143,40 @@ export const sendRejectionEmail = async (university, reason) => {
     return false;
   }
 };
+
+export const sendOtpEmail = async (email, otp) => {
+  try {
+    const senderEmail = getEnv('EMAIL');
+    
+    if (!senderEmail || !getPass()) {
+      console.error("❌ EMAIL CONFIG ERROR: Missing credentials");
+      return false;
+    }
+
+    const mailOptions = {
+      from: `"Unisphere Security" <${senderEmail}>`,
+      to: email,
+      subject: 'Password Reset OTP - Unisphere',
+      text: `Your OTP for password reset is: ${otp}. It expires in 10 minutes.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+          <h2 style="color: #6b46c1; text-align: center;">Password Reset Request</h2>
+          <p>Hello,</p>
+          <p>You requested to reset your password for the Unisphere University Portal.</p>
+          <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 6px; margin: 20px 0;">
+            <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #1f2937;">${otp}</span>
+          </div>
+          <p style="text-align: center; color: #666;">This OTP is valid for <strong>10 minutes</strong>.</p>
+          <p style="font-size: 12px; color: #999; text-align: center; margin-top: 30px;">If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ OTP email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error("❌ OTP Email Failed:", error);
+    return false;
+  }
+};

@@ -1,5 +1,3 @@
-// controllers/studentController.js
-
 import mongoose from 'mongoose';
 import User from '../models/user.js';
 import University from '../models/university.js';
@@ -113,9 +111,7 @@ function getProgramFaculty(programName) {
   return 'Other';
 }
 
-// ────────────────────────────────────────────────
 // UPDATE PROFILE
-// ────────────────────────────────────────────────
 export const updateStudentProfile = async (req, res) => {
   try {
     const { 
@@ -129,7 +125,7 @@ export const updateStudentProfile = async (req, res) => {
       fieldOfInterest
     } = req.body;
 
-    // Validate percentage (core requirement)
+    // Validate percentage
     const percentage = parseFloat(intermediatePercentage);
     if (isNaN(percentage) || percentage < 33 || percentage > 100) {
       return res.status(400).json({ 
@@ -183,9 +179,9 @@ export const updateStudentProfile = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────
+
 // GET PROFILE
-// ────────────────────────────────────────────────
+
 export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
@@ -250,10 +246,7 @@ export const compareUniversities = async (req, res) => {
   }
 };
 
-
-// ────────────────────────────────────────────────
-// GET RECOMMENDATIONS (ad-hoc - body based)
-// ────────────────────────────────────────────────
+// GET RECOMMENDATIONS
 export const getRecommendations = async (req, res) => {
   try {
     console.log('╔════════════════════════════════════════════╗');
@@ -392,9 +385,8 @@ export const getRecommendations = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────
+
 // GET MY RECOMMENDATIONS (uses saved profile)
-// ────────────────────────────────────────────────
 export const getMyRecommendations = async (req, res) => {
   console.log('╔════════════════════════════════════════════╗');
   console.log('║  getMyRecommendations (profile-based) CALLED║');
@@ -533,10 +525,7 @@ export const getMyRecommendations = async (req, res) => {
   }
 };
 
-// The other functions (compareUniversities, getScholarships, getEvents) remain the same
-// but replace Student → User in them too:
-
-// Example for getScholarships:
+//  getScholarships:
 export const getScholarships = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -562,7 +551,6 @@ export const getScholarships = async (req, res) => {
       }
     });
 
-    // FIX: Add logging for debugging
     console.log('Scholarships for user', user._id, ':', allScholarships);
 
     res.status(200).json({ success: true, data: allScholarships });
@@ -572,7 +560,6 @@ export const getScholarships = async (req, res) => {
   }
 };
 
-// Public version - no auth, only approved universities
 export const getAllScholarshipsPublic = async (req, res) => {
   try {
     const universities = await University.find({ status: "approved" })
@@ -622,11 +609,6 @@ export const getAllEventsPublic = async (req, res) => {
   }
 };
 
-// Do the same replacement in getEvents and compareUniversities
-
-// @desc    Get all events from approved universities (sorted by date)
-// @route   GET /api/auth/events
-// @access  Private (Student)
 export const getEvents = async (req, res) => {
   try {
     const universities = await University.find({
@@ -662,9 +644,9 @@ export const getEvents = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────
-// GET UNIVERSITY DETAILS (Single)
-// ────────────────────────────────────────────────
+
+// GET UNIVERSITY DETAILS 
+
 export const getUniversityDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -715,8 +697,8 @@ export const getUniversityDetails = async (req, res) => {
 
         return {
           ...p.toObject(),
-          name: pName, // Ensure name is available
-          faculty: programFaculty, // Add faculty so frontend filtering works
+          name: pName,
+          faculty: programFaculty,
           minPercentage: minPerc,
           maxPercentage: maxPerc,
           feePerSemester: p.fee || p.feePerSemester || 'N/A',
@@ -727,7 +709,7 @@ export const getUniversityDetails = async (req, res) => {
 
     const data = {
       ...university.toObject(),
-      universityName: university.institutionName, // Map institutionName to universityName for frontend
+      universityName: university.institutionName,
       programs: activePrograms,
       rating: university.rating || 0
     };
@@ -739,9 +721,9 @@ export const getUniversityDetails = async (req, res) => {
   }
 };
 
-// ────────────────────────────────────────────────
+
 // GET ALL UNIVERSITIES (Public/Student)
-// ────────────────────────────────────────────────
+
 export const getAllUniversities = async (req, res) => {
   try {
     const universities = await University.find({ status: 'approved' }).select('-password -registeredStudents');

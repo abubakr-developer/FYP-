@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, AlertCircle, Trash2, Edit, X } from "lucide-react";
+import { Loader2, AlertCircle, Trash2, Pencil, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { programSchema, validateForm } from "@/lib/validation"; 
+import { programSchema, validateForm } from "@/lib/validation";
 
 export default function ProgramsTab({ apiFetch }) {
   const { toast } = useToast();
+
   const [programData, setProgramData] = useState({
     programName: "",
     duration: "",
@@ -17,6 +18,7 @@ export default function ProgramsTab({ apiFetch }) {
     fee: "",
     seats: "",
   });
+
   const [programs, setPrograms] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loadingPrograms, setLoadingPrograms] = useState(false);
@@ -54,6 +56,7 @@ export default function ProgramsTab({ apiFetch }) {
       fee: programData.fee ? parseFloat(programData.fee) : undefined,
       seats: programData.seats ? parseInt(programData.seats) : undefined,
     };
+
     const result = validateForm(programSchema, parsed);
     if (!result.success) {
       setErrors(result.errors || {});
@@ -64,8 +67,12 @@ export default function ProgramsTab({ apiFetch }) {
     try {
       await apiFetch(editingId ? `/programs/${editingId}` : "/programs", {
         method: editingId ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(parsed),
       });
+
       toast({ title: "Success", description: `Program ${editingId ? "updated" : "added"} successfully` });
       setProgramData({ programName: "", duration: "", eligibilityCriteria: "", fee: "", seats: "" });
       setErrors({});
@@ -83,11 +90,11 @@ export default function ProgramsTab({ apiFetch }) {
 
   const handleEdit = (program) => {
     setProgramData({
-      programName: program.programName,
-      duration: program.duration,
-      eligibilityCriteria: program.eligibilityCriteria,
-      fee: program.fee || "",
-      seats: program.seats || "",
+      programName: program.programName || "",
+      duration: program.duration || "",
+      eligibilityCriteria: program.eligibilityCriteria || "",
+      fee: program.fee?.toString() || "",
+      seats: program.seats?.toString() || "",
     });
     setEditingId(program._id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -100,11 +107,7 @@ export default function ProgramsTab({ apiFetch }) {
       toast({ title: "Success", description: "Program deleted successfully" });
       loadPrograms();
     } catch (err) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
 
@@ -116,6 +119,7 @@ export default function ProgramsTab({ apiFetch }) {
 
   return (
     <div className="space-y-8">
+      {/* Form Card - unchanged */}
       <Card className="border-2">
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
@@ -134,7 +138,7 @@ export default function ProgramsTab({ apiFetch }) {
               <Input
                 placeholder="e.g. Bachelor of Science in Computer Science"
                 value={programData.programName}
-                onChange={e => setProgramData(p => ({ ...p, programName: e.target.value }))}
+                onChange={(e) => setProgramData((p) => ({ ...p, programName: e.target.value }))}
                 className={errors.programName && "border-destructive"}
               />
               {renderError("programName")}
@@ -144,7 +148,7 @@ export default function ProgramsTab({ apiFetch }) {
               <Input
                 placeholder="e.g. 4 Years"
                 value={programData.duration}
-                onChange={e => setProgramData(p => ({ ...p, duration: e.target.value }))}
+                onChange={(e) => setProgramData((p) => ({ ...p, duration: e.target.value }))}
                 className={errors.duration && "border-destructive"}
               />
               {renderError("duration")}
@@ -157,7 +161,7 @@ export default function ProgramsTab({ apiFetch }) {
               placeholder="e.g. Intermediate (Pre-Engineering) with minimum 60% marks, entry test required..."
               rows={4}
               value={programData.eligibilityCriteria}
-              onChange={e => setProgramData(p => ({ ...p, eligibilityCriteria: e.target.value }))}
+              onChange={(e) => setProgramData((p) => ({ ...p, eligibilityCriteria: e.target.value }))}
               className={errors.eligibilityCriteria && "border-destructive"}
             />
             {renderError("eligibilityCriteria")}
@@ -165,12 +169,12 @@ export default function ProgramsTab({ apiFetch }) {
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Fee (optional)</Label>
+              <Label>Fee (PKR - optional)</Label>
               <Input
                 type="number"
                 placeholder="e.g. 500000"
                 value={programData.fee}
-                onChange={e => setProgramData(p => ({ ...p, fee: e.target.value }))}
+                onChange={(e) => setProgramData((p) => ({ ...p, fee: e.target.value }))}
                 className={errors.fee && "border-destructive"}
               />
               {renderError("fee")}
@@ -181,7 +185,7 @@ export default function ProgramsTab({ apiFetch }) {
                 type="number"
                 placeholder="e.g. 100"
                 value={programData.seats}
-                onChange={e => setProgramData(p => ({ ...p, seats: e.target.value }))}
+                onChange={(e) => setProgramData((p) => ({ ...p, seats: e.target.value }))}
                 className={errors.seats && "border-destructive"}
               />
               {renderError("seats")}
@@ -189,36 +193,78 @@ export default function ProgramsTab({ apiFetch }) {
           </div>
 
           <Button onClick={handleSubmit} className="w-full" disabled={loadingPrograms}>
-            {loadingPrograms ? "Processing..." : (editingId ? "Update Program" : "Add Program")}
+            {loadingPrograms ? "Processing..." : editingId ? "Update Program" : "Add Program"}
           </Button>
         </CardContent>
       </Card>
 
+      {/* Programs List */}
       <Card className="border-2">
-        <CardHeader><CardTitle>Your Programs</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Your Programs</CardTitle>
+        </CardHeader>
         <CardContent>
           {loadingPrograms ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
           ) : programs.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No programs added yet.</p>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {programs.map(p => (
-                <Card key={p._id}>
-                  <CardContent className="pt-6 relative">
-                    <div className="absolute top-4 right-4 flex gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(p)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(p._id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {programs.map((p) => (
+                <Card
+                  key={p._id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full min-h-[260px]"
+                >
+                  <CardContent className="p-6 flex flex-col flex-1 space-y-4">
+                    <h3 className="font-semibold text-xl line-clamp-2">{p.programName}</h3>
+
+                    <div className="space-y-2 text-sm">
+                      <p>
+                        <span className="font-medium">Duration:</span> {p.duration || "—"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Fee:</span> PKR {p.fee?.toLocaleString() || "—"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Seats:</span> {p.seats || "—"}
+                      </p>
                     </div>
-                    <h3 className="font-semibold">{p.programName}</h3>
-                    <p className="text-sm text-muted-foreground">Duration: {p.duration}</p>
-                    <p className="text-sm text-muted-foreground">Eligibility: {p.eligibilityCriteria}</p>
-                    <p className="text-sm text-muted-foreground">Fee: PKR {p.fee?.toLocaleString() || "0"}</p>
-                    <p className="text-sm text-muted-foreground">Seats: {p.seats || "0"}</p>
+
+                    <div className="space-y-2 flex-1">
+                      <p className="text-sm">
+                        <span className="font-medium block">Eligibility Criteria:</span>
+                        <span className="text-muted-foreground line-clamp-3">
+                          {p.eligibilityCriteria || "No eligibility criteria specified."}
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* Buttons fixed at bottom */}
+                    <div className="mt-auto pt-4 border-t">
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 gap-1.5"
+                          onClick={() => handleEdit(p)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </Button>
+
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1 gap-1.5"
+                          onClick={() => handleDelete(p._id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

@@ -1,5 +1,5 @@
 export const isSuperAdmin = (req, res, next) => {
-    // Require authenticated user and role 'superAdmin'
+    
     if (!req.user || req.user.role !== 'superAdmin') {
         return res.status(403).json({ 
             success: false, 

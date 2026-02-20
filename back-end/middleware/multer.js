@@ -5,7 +5,6 @@ import { dirname, join } from 'path';
 import fs from 'fs';
 import cloudinary from 'cloudinary';
 
-// Configure Cloudinary (add your credentials from .env or hardcode for testing)
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'your_cloud_name',
   api_key: process.env.CLOUDINARY_API_KEY || 'your_api_key',
@@ -60,8 +59,6 @@ export const uploadToCloudinary = async (fileBuffer, folder = 'unisphere') => {
   });
 };
 
-// Optional: Global Multer error handler middleware
-// Add this in your main app file (after all routes)
 export function handleMulterError(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

@@ -18,6 +18,8 @@ import StudentLogin from "./pages/Student/StudentLogin";
 import StudentForgotPassword from "./pages/Student/StudentForgotPassword";
 import StudentResetPassword from "./pages/Student/StudentResetPassword";
 import UniversityLogin from "./pages/University/UniversityLogin";
+import ForgetPassword from "./pages/University/ForgetPassword";
+import ResetPassword from "./pages/University/ResetPassword";
 import AdminLogin from "./pages/Admin/AdminLogin";
 import UniversityRegister from "./pages/University/UniversityRegister";
 import UniversityDetailedInformation from "./pages/Student/UniversityDetailedInformation";
@@ -57,6 +59,8 @@ const App = () => (
           <Route path="/student-forgot-password" element={<StudentForgotPassword />} />
           <Route path="/student-reset-password" element={<StudentResetPassword />} />
           <Route path="/university-login" element={<UniversityLogin />} />
+          <Route path="/forget-password" element={<ForgetPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/role-selection" element={<RoleSelection isOpen={true} />} />

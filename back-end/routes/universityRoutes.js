@@ -18,13 +18,18 @@ import {
   addEvent,
   getEvents,
   deleteEvent,
-  updateEvent
+  updateEvent,
+  forgetPassword,
+  resetPassword 
 } from '../controller/universityController.js';
 
 const universityRouter = express.Router();
 
 universityRouter.post('/register', registerUniversity);
 universityRouter.post('/login', loginUniversity)
+
+universityRouter.post('/forgetPassword', forgetPassword);
+universityRouter.post('/resetPassword', resetPassword);
 
 universityRouter.get('/profile', userAuth, getProfile);
 universityRouter.put('/profile', userAuth, updateProfile);
@@ -34,14 +39,14 @@ universityRouter.get('/programs', userAuth, isUniversityAdmin, getPrograms);
 universityRouter.put('/programs/:programId', userAuth, isUniversityAdmin, updateProgram);
 universityRouter.delete('/programs/:programId', userAuth, isUniversityAdmin, deleteProgram);
 
-universityRouter.post('/scholarships', userAuth, isUniversityAdmin, uploadsImg, addScholarship);
+universityRouter.post('/scholarships', userAuth, isUniversityAdmin, addScholarship);
 universityRouter.get('/scholarships', userAuth, isUniversityAdmin, getScholarships);
 universityRouter.put('/scholarships/:scholarshipId', userAuth, isUniversityAdmin, updateScholarship);
 universityRouter.delete('/scholarships/:scholarshipId', userAuth, isUniversityAdmin, deleteScholarship);
 
-universityRouter.post('/events', userAuth, isUniversityAdmin, uploadsImg, addEvent);
+universityRouter.post('/events', userAuth, isUniversityAdmin, addEvent);
 universityRouter.get('/events', userAuth, isUniversityAdmin, getEvents);
-universityRouter.put('/events/:eventId', userAuth, isUniversityAdmin, uploadsImg, updateEvent);
+universityRouter.put('/events/:eventId', userAuth, isUniversityAdmin, updateEvent);
 universityRouter.delete('/events/:eventId', userAuth, isUniversityAdmin, deleteEvent);
 
 export default universityRouter;

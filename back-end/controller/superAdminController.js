@@ -7,7 +7,7 @@ import { sendApprovalEmail, sendRejectionEmail } from "../utils/sendEmail.js";
 export const getPendingUniversities = async (req, res) => {
   try {
     const pending = await University.find({ status: "pending" })
-      .select("-password -__v") // don't send password
+      .select("-password -__v") 
       .sort({ createdAt: -1 })
       .lean();
 
@@ -44,9 +44,7 @@ export const approveUniversity = async (req, res) => {
     // Try to send approval email
     let emailStatus = "not attempted";
     try {
-      console.log(
-        `Attempting to send approval email to: ${university.officialEmail}`,
-      );
+      console.log(`Attempting to send approval email to: ${university.officialEmail}`);
       const sent = await sendApprovalEmail(university);
       emailStatus = sent ? "sent" : "failed";
     } catch (emailErr) {
@@ -121,37 +119,6 @@ export const rejectUniversity = async (req, res) => {
   }
 };
 
-// Get Platform Analytics
-export const getAnalytics = async (req, res) => {
-  try {
-    const totalUsers = await User.countDocuments();
-    const students = await User.countDocuments({ role: "student" });
-    const universityAdmins = await User.countDocuments({
-      role: "universityAdmin",
-    });
-    const universities = await University.countDocuments();
-
-    // Add more: e.g., applications count if you have Application model
-
-    return res.status(200).json({
-      message: "Analytics fetched successfully",
-      success: true,
-      data: {
-        totalUsers,
-        students,
-        universityAdmins,
-        universities,
-        // Add compliance metrics, e.g., active/inactive users
-      },
-    });
-  } catch (error) {
-    console.error("Analytics error:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", success: false });
-  }
-};
-
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -161,8 +128,6 @@ export const login = async (req, res) => {
         .status(400)
         .json({ message: "Please provide email and password" });
     }
-
-    // Normalize email (trim + lowercase)
     const normalizedEmail = email.trim().toLowerCase();
 
     // Find user and ensure they are a superAdmin
@@ -179,11 +144,9 @@ export const login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      // console.log(`[SuperAdmin Login] Password mismatch for: ${normalizedEmail}`);
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
-    // Create JWT token
+ // Create JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET_KEY,
@@ -206,7 +169,6 @@ export const login = async (req, res) => {
   }
 };
 
-// Get All Users
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find({ role: { $ne: "superAdmin" } }).select(
@@ -226,7 +188,6 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// Update User
 export const updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -263,7 +224,6 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// Delete User
 export const deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -278,7 +238,6 @@ export const deleteUser = async (req, res) => {
         });
     }
 
-    // If universityAdmin, optionally delete linked university
     if (user.role === "universityAdmin") {
       await University.deleteOne({ adminId: userId });
     }
@@ -297,7 +256,6 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// Manage Universities: Get All
 export const getAllUniversities = async (req, res) => {
   try {
     const universities = await University.find({});
@@ -315,11 +273,10 @@ export const getAllUniversities = async (req, res) => {
   }
 };
 
-// Update University
 export const updateUniversity = async (req, res) => {
   try {
     const { universityId } = req.params;
-    const { name, location, description } = req.body; // Add more fields as needed
+    const { name, location, description } = req.body;
 
     const university = await University.findById(universityId);
     if (!university) {
@@ -347,7 +304,6 @@ export const updateUniversity = async (req, res) => {
   }
 };
 
-// Delete University
 export const deleteUniversity = async (req, res) => {
   try {
     const { universityId } = req.params;
@@ -358,8 +314,7 @@ export const deleteUniversity = async (req, res) => {
         .status(404)
         .json({ message: "University not found.", success: false });
     }
-
-    // Optionally delete linked admin user
+    
     if (university.adminId) {
       await User.deleteOne({ _id: university.adminId });
     }

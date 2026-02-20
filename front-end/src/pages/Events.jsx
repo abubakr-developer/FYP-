@@ -185,14 +185,6 @@ export default function Events() {
                       <MapPin className="h-4 w-4" />
                       <span>{event.location || "Location not specified"}</span>
                     </div>
-
-                    <div className="pt-4 border-t">
-                      <Button variant="outline" className="w-full" asChild>
-                        <Link to={`/universitydetailinformation/${event.universityId}`}>
-                          View University <ExternalLink className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               ))}

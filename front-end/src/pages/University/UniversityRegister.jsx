@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, AlertCircle, Building } from "lucide-react";
+import {
+  GraduationCap,
+  AlertCircle,
+  Building,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
@@ -30,6 +36,8 @@ export default function UniversityRegister() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -61,7 +69,8 @@ export default function UniversityRegister() {
     requiredFields.forEach((field) => {
       if (!formData[field]?.trim()) {
         newErrors[field] = `${
-          field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")
+          field.charAt(0).toUpperCase() +
+          field.slice(1).replace(/([A-Z])/g, " $1")
         } is required`;
       }
     });
@@ -93,18 +102,29 @@ export default function UniversityRegister() {
 
     try {
       // Ensure email is trimmed before sending
-      const payload = { ...formData, officialEmail: formData.officialEmail.trim() };
-      
-      const response = await axios.post(`${API_URL}/api/university/register`, payload);
+      const payload = {
+        ...formData,
+        officialEmail: formData.officialEmail.trim(),
+      };
+
+      const response = await axios.post(
+        `${API_URL}/api/university/register`,
+        payload,
+      );
 
       // Success
       toast({
         title: "Registration Submitted",
-        description: response.data.message || "Your institution registration is pending approval.",
+        description:
+          response.data.message ||
+          "Your institution registration is pending approval.",
       });
 
       // Save basic user data including institutionName to localStorage
-      localStorage.setItem("user", JSON.stringify({ institutionName: formData.institutionName }));
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ institutionName: formData.institutionName }),
+      );
 
       navigate("/university-login");
 
@@ -112,12 +132,13 @@ export default function UniversityRegister() {
       if (response.data.token) {
         localStorage.setItem("universityToken", response.data.token);
       }
-
     } catch (error) {
       console.error("University registration error:", error);
-      
-      const errorMessage = error.response?.data?.message || "Failed to connect to the server. Please try again later.";
-      
+
+      const errorMessage =
+        error.response?.data?.message ||
+        "Failed to connect to the server. Please try again later.";
+
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       }
@@ -162,7 +183,9 @@ export default function UniversityRegister() {
           <CardContent className="pt-6">
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="institutionName">University / Institution Name *</Label>
+                <Label htmlFor="institutionName">
+                  University / Institution Name *
+                </Label>
                 <Input
                   id="institutionName"
                   placeholder="e.g. University of the Punjab, Lahore"
@@ -260,13 +283,29 @@ export default function UniversityRegister() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={errors.password ? "border-destructive" : ""}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    className={`pr-10 ${errors.password ? "border-destructive" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Minimum 8 characters with uppercase, lowercase, and number
                 </p>
@@ -275,13 +314,29 @@ export default function UniversityRegister() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className={errors.confirmPassword ? "border-destructive" : ""}
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className={`pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 {renderError("confirmPassword")}
               </div>
 
@@ -296,7 +351,10 @@ export default function UniversityRegister() {
 
               <p className="text-center text-sm text-muted-foreground mt-4">
                 Already have an account?{" "}
-                <Link to="/university-login" className="text-primary hover:underline">
+                <Link
+                  to="/university-login"
+                  className="text-primary hover:underline"
+                >
                   Sign in
                 </Link>
               </p>

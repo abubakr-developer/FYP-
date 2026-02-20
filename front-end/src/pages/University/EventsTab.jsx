@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Loader2, Trash2, Edit, X } from "lucide-react";
+import { AlertCircle, Loader2, Trash2, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,6 @@ export default function EventsTab({ apiFetch }) {
     description: "",
   });
 
-  const [eventFile, setEventFile] = useState(null);
   const [events, setEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -35,19 +34,13 @@ export default function EventsTab({ apiFetch }) {
       const response = await apiFetch("/events");
       console.log("Events fetched from backend:", response);
 
-      // Handle different possible response shapes from your backend
       let eventList = [];
 
-      // Most common shape: { success: true, events: [...] }
       if (response?.events && Array.isArray(response.events)) {
         eventList = response.events;
-      }
-      // Alternative shape: { success: true, data: { events: [...] } }
-      else if (response?.data?.events && Array.isArray(response.data.events)) {
+      } else if (response?.data?.events && Array.isArray(response.data.events)) {
         eventList = response.data.events;
-      }
-      // Direct array (less common)
-      else if (Array.isArray(response?.data)) {
+      } else if (Array.isArray(response?.data)) {
         eventList = response.data;
       } else if (Array.isArray(response)) {
         eventList = response;
@@ -56,7 +49,6 @@ export default function EventsTab({ apiFetch }) {
       }
 
       setEvents(eventList);
-
     } catch (err) {
       console.error("Failed to load events:", err);
       toast({
@@ -64,7 +56,7 @@ export default function EventsTab({ apiFetch }) {
         description: err.message || "Could not load your events. Please try again.",
         variant: "destructive",
       });
-      setEvents([]); // Clear list on error to avoid confusion
+      setEvents([]);
     } finally {
       setLoadingEvents(false);
     }
@@ -92,58 +84,41 @@ export default function EventsTab({ apiFetch }) {
       return;
     }
 
-    if (!eventFile && !editingId) {
-      toast({
-        title: "Missing file",
-        description: "Please select a poster/image",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("title", eventData.title);
-      formData.append("date", eventData.date);
-      formData.append("location", eventData.location);
-      formData.append("description", eventData.description);
-      if (eventFile) {
-        formData.append("image", eventFile);
-      }
+      const payload = { ...eventData };
 
       const response = await apiFetch(editingId ? `/events/${editingId}` : "/events", {
         method: editingId ? "PUT" : "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
 
-      console.log("Add event response:", response);
+      console.log("Event response:", response);
 
       toast({
         title: "Success",
         description: response.message || `Event ${editingId ? "updated" : "created"} successfully`,
       });
 
-      // Reset form
       setEventData({
         title: "",
         date: "",
         location: "",
         description: "",
       });
-      setEventFile(null);
       setErrors({});
       setEditingId(null);
 
-      // Give backend a moment to save → then refresh list
       await new Promise((resolve) => setTimeout(resolve, 500));
       await loadEvents();
-
     } catch (err) {
-      console.error("Create event failed:", err);
+      console.error("Event operation failed:", err);
       toast({
-        title: "Failed to create event",
+        title: "Failed",
         description: err.message || "Server error occurred",
         variant: "destructive",
       });
@@ -155,12 +130,11 @@ export default function EventsTab({ apiFetch }) {
   const handleEdit = (event) => {
     setEventData({
       title: event.title,
-      date: event.date ? new Date(event.date).toISOString().split('T')[0] : "",
+      date: event.date ? new Date(event.date).toISOString().split("T")[0] : "",
       location: event.location,
       description: event.description,
     });
     setEditingId(event._id);
-    setEventFile(null); // Reset file input
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -177,21 +151,26 @@ export default function EventsTab({ apiFetch }) {
 
   const handleCancelEdit = () => {
     setEventData({ title: "", date: "", location: "", description: "" });
-    setEventFile(null);
     setEditingId(null);
     setErrors({});
   };
 
   return (
     <div className="space-y-8">
+      {/* Form Card - unchanged */}
       <Card className="border-2">
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             {editingId ? "Edit Event" : "Create Event"}
-            {editingId && <Button variant="ghost" size="sm" onClick={handleCancelEdit}><X className="h-4 w-4 mr-2" /> Cancel</Button>}
+            {editingId && (
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                <X className="h-4 w-4 mr-2" /> Cancel
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* ... form fields unchanged ... */}
           <div className="space-y-2">
             <Label>Event Title</Label>
             <Input
@@ -239,15 +218,6 @@ export default function EventsTab({ apiFetch }) {
             {renderError("description")}
           </div>
 
-          <div className="space-y-2">
-            <Label>Poster / Banner</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setEventFile(e.target.files?.[0] || null)}
-            />
-          </div>
-
           <Button
             onClick={handleSubmit}
             className="w-full"
@@ -258,16 +228,16 @@ export default function EventsTab({ apiFetch }) {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
               </>
+            ) : editingId ? (
+              "Update Event"
             ) : (
-              editingId ? "Update Event" : "Create Event"
+              "Create Event"
             )}
           </Button>
         </CardContent>
       </Card>
 
-      {/* ────────────────────────────────────────────────
-          YOUR EVENTS LIST
-      ──────────────────────────────────────────────── */}
+      {/* Events List */}
       <Card className="border-2">
         <CardHeader>
           <CardTitle>Your Events</CardTitle>
@@ -287,61 +257,54 @@ export default function EventsTab({ apiFetch }) {
               {events.map((event) => (
                 <Card
                   key={event._id}
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                  className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full min-h-[280px]"
                 >
-                  <CardContent className="p-0">
-                    {event.posterUrl && (
-                      <div className="relative h-48 overflow-hidden">
-                        <img
-                          src={event.posterUrl}
-                          alt={event.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.src = "/placeholder-event.jpg"; // Add this file to public/
-                            e.target.alt = "Poster not available";
-                          }}
-                        />
-                      </div>
-                    )}
+                  <CardContent className="p-6 flex flex-col flex-1 space-y-4">
+                    <h3 className="font-semibold text-xl line-clamp-2">{event.title}</h3>
 
-                    <div className="p-6 space-y-4">
-                      <h3 className="font-semibold text-xl line-clamp-2">
-                        {event.title}
-                      </h3>
-
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium block">Date</span>
-                          {event.date
-                            ? new Date(event.date).toLocaleDateString("en-PK", {
-                                weekday: "short",
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : "—"}
-                        </div>
-
-                        <div>
-                          <span className="font-medium block">Location</span>
-                          {event.location || "Not specified"}
-                        </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium block">Date</span>
+                        {event.date
+                          ? new Date(event.date).toLocaleDateString("en-PK", {
+                              weekday: "short",
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "—"}
                       </div>
 
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {event.description || "No description provided."}
-                      </p>
+                      <div>
+                        <span className="font-medium block">Location</span>
+                        {event.location || "Not specified"}
+                      </div>
+                    </div>
 
-                      <div className="flex gap-3 pt-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
-                          Edit
-                        </Button>
+                    <p className="text-sm text-muted-foreground line-clamp-3 flex-1">
+                      {event.description || "No description provided."}
+                    </p>
+
+                    {/* Buttons fixed at bottom */}
+                    <div className="mt-auto pt-4 border-t">
+                      <div className="flex gap-3">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(event._id)}
-                          className="text-destructive hover:text-destructive"
+                          className="flex-1 gap-1.5"
+                          onClick={() => handleEdit(event)}
                         >
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </Button>
+
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1 gap-1.5"
+                          onClick={() => handleDelete(event._id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                           Delete
                         </Button>
                       </div>

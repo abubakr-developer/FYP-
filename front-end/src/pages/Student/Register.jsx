@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, AlertCircle } from "lucide-react";
+import { GraduationCap, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { registerSchema, validateForm } from "@/lib/validation";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
@@ -26,6 +26,8 @@ export default function Register() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -221,15 +223,25 @@ export default function Register() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={formData.password}
-                  onChange={handleChange}
-                  maxLength={128}
-                  disabled={isSubmitting}
-                  className={errors.password ? "border-destructive" : ""}
-                />
+                <div className="relative">
+                  <Input 
+                    id="password" 
+                    type={showPassword ? "text" : "password"} 
+                    value={formData.password}
+                    onChange={handleChange}
+                    maxLength={128}
+                    disabled={isSubmitting}
+                    className={errors.password ? "border-destructive pr-10" : "pr-10"}
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Min 8 characters with uppercase, lowercase, and number
                 </p>
@@ -238,15 +250,25 @@ export default function Register() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input 
-                  id="confirm-password" 
-                  type="password" 
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  maxLength={128}
-                  disabled={isSubmitting}
-                  className={errors.confirmPassword ? "border-destructive" : ""}
-                />
+                <div className="relative">
+                  <Input 
+                    id="confirm-password" 
+                    type={showConfirmPassword ? "text" : "password"} 
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    maxLength={128}
+                    disabled={isSubmitting}
+                    className={errors.confirmPassword ? "border-destructive pr-10" : "pr-10"}
+                  />
+                  <button
+                    type="button"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {renderError("confirmPassword")}
               </div>
 

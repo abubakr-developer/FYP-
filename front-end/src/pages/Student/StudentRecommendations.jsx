@@ -146,47 +146,110 @@ export default function StudentRecommendations() {
               </h3>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {recommendations.notEligible.map((uni) => (
-                  <Card key={uni._id} className="border-2 flex flex-col">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">
-                          {uni.universityName}
-                        </CardTitle>
-                        <Badge
-                          variant="destructive"
-                          className="flex items-center gap-1"
-                        >
-                          <AlertTriangle className="h-3.5 w-3.5" />
-                          Not Eligible
-                        </Badge>
-                      </div>
-                      <CardDescription>
-                        {uni.address} • Rating: {uni.rating}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col">
-                      <p className="mb-2 font-medium">Programs:</p>
-                      <ul className="list-disc pl-5 mb-6 space-y-1.5 flex-1">
-                        {uni.programs.map((prog) => (
-                          <li key={prog._id} className="text-muted-foreground">
-                            {prog.name} – Reason:{" "}
-                            <span className="text-destructive">
-                              {prog.reason}
+                  <Card
+                    key={uni._id}
+                    className="border-2 flex flex-col h-full hover:shadow-md transition-shadow"
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg leading-tight mb-1 truncate">
+                            {uni.universityName}
+                          </CardTitle>
+                          <CardDescription className="text-sm flex items-center gap-1.5 flex-wrap">
+                            <span>
+                              {uni.address || "Location not specified"}
                             </span>
-                          </li>
-                        ))}
-                      </ul>
-                      <Button
-                        variant="outline"
-                        className="w-full mt-auto"
-                        asChild
-                      >
-                        <Link
-                          to={`/universitydetailinformation/${uni._id}?mode=ineligible&department=${encodeURIComponent(recommendations.fieldOfInterest)}`}
+                            <span className="inline-block">•</span>
+                            <span className="font-medium">
+                              Rating: {uni.rating || "N/A"}
+                            </span>
+                          </CardDescription>
+                        </div>
+
+                        {/* Status badge - only for not-eligible cards */}
+                        {!recommendations.eligible.includes(uni) && (
+                          <Badge
+                            variant="destructive"
+                            className="shrink-0 flex items-center gap-1 text-xs"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            Not Eligible
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="flex-1 flex flex-col space-y-5">
+                      {/* Programs list */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-foreground">
+                          {recommendations.eligible.includes(uni)
+                            ? "Eligible Programs"
+                            : "Programs"}
+                        </p>
+
+                        <ul className="space-y-3 text-sm">
+                          {uni.programs.map((prog) => (
+                            <li
+                              key={prog._id}
+                              className="border-l-2 pl-3"
+                              style={{
+                                borderColor: recommendations.eligible.includes(
+                                  uni,
+                                )
+                                  ? "hsl(var(--primary))"
+                                  : "hsl(var(--destructive))",
+                              }}
+                            >
+                              <div className="font-medium">{prog.name}</div>
+                              <div className="text-muted-foreground text-xs mt-0.5">
+                                {prog.level} • {prog.duration} years
+                              </div>
+                              <div className="mt-1 flex items-baseline gap-1.5">
+                                <span className="text-xs font-medium">
+                                  Fee:
+                                </span>
+                                <span>{prog.feePerSemester}</span>
+                              </div>
+
+                              {/* Reason shown only for ineligible */}
+                              {!recommendations.eligible.includes(uni) &&
+                                prog.reason && (
+                                  <div className="mt-1.5 text-xs text-destructive font-medium">
+                                    Reason: {prog.reason}
+                                  </div>
+                                )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Action button at bottom */}
+                      <div className="mt-auto pt-4">
+                        <Button
+                          variant={
+                            recommendations.eligible.includes(uni)
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          className="w-full gap-2"
+                          asChild
                         >
-                          View Details
-                        </Link>
-                      </Button>
+                          <Link
+                            to={`/universitydetailinformation/${uni._id}?mode=${
+                              recommendations.eligible.includes(uni)
+                                ? "eligible"
+                                : "ineligible"
+                            }&department=${encodeURIComponent(recommendations.fieldOfInterest)}`}
+                          >
+                            {recommendations.eligible.includes(uni)
+                              ? "View Details & Apply"
+                              : "View Details"}
+                          </Link>
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

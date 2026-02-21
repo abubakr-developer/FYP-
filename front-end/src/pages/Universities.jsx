@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";           // ← added
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,12 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Users, BookOpen, Star, AlertCircle, Loader2, ExternalLink } from "lucide-react";
-// Removed useToast if you're no longer using it here
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Universities() {
-  const navigate = useNavigate();                        // ← added
+  const navigate = useNavigate();
 
   const [universities, setUniversities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,30 +51,35 @@ export default function Universities() {
     fetchUniversities();
   }, []);
 
-  // Extract unique cities & types for filters
-  const cities = ["all",'Lahore', 'Faisalabad', 'Multan', 'Rawalpindi', 'Gujranwala', 'Sialkot', 'Gujrat', 'Bahawalpur', 'Sargodha'];
+  // Extract unique cities & types for filters (you can make this dynamic later)
+  const cities = ["all", "Lahore", "Faisalabad", "Multan", "Rawalpindi", "Gujranwala", "Sialkot", "Gujrat", "Bahawalpur", "Sargodha"];
   const types = ["all", "Public", "Private"];
 
   // Apply filters
-  const filteredUniversities = universities.filter(uni => {
+  const filteredUniversities = universities.filter((uni) => {
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch =
       (uni.institutionName || "").toLowerCase().includes(searchLower) ||
       (uni.city || "").toLowerCase().includes(searchLower) ||
       (uni.address || "").toLowerCase().includes(searchLower);
 
-    const matchesCity = cityFilter === "all" || 
+    const matchesCity =
+      cityFilter === "all" ||
       (uni.city || "").toLowerCase() === cityFilter.toLowerCase() ||
       (uni.address || "").toLowerCase().includes(cityFilter.toLowerCase());
 
-    const matchesType = typeFilter === "all" || 
+    const matchesType =
+      typeFilter === "all" ||
       (uni.institutionType || "").toLowerCase() === typeFilter.toLowerCase();
 
     return matchesSearch && matchesCity && matchesType;
   });
 
-  const handleViewDetails = () => {
-    navigate("/studentlogin");                         // ← changed behavior
+  const handleViewDetails = (uni) => {
+    // You can pass university ID or slug if your details page supports it
+    // For now going to student login as per your original code
+    navigate("/studentlogin");
+    // Alternative: navigate(`/university/${uni._id}`);
   };
 
   if (loading) {
@@ -133,7 +137,7 @@ export default function Universities() {
                     <SelectValue placeholder="Filter by city" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cities.map(city => (
+                    {cities.map((city) => (
                       <SelectItem key={city} value={city}>
                         {city === "all" ? "All Cities" : city}
                       </SelectItem>
@@ -146,7 +150,7 @@ export default function Universities() {
                     <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {types.map(type => (
+                    {types.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type === "all" ? "All Types" : type}
                       </SelectItem>
@@ -167,20 +171,24 @@ export default function Universities() {
               <p className="text-xl font-medium text-muted-foreground">
                 No universities found matching your search.
               </p>
-              <Button variant="outline" className="mt-6" onClick={() => {
-                setSearchQuery("");
-                setCityFilter("all");
-                setTypeFilter("all");
-              }}>
+              <Button
+                variant="outline"
+                className="mt-6"
+                onClick={() => {
+                  setSearchQuery("");
+                  setCityFilter("all");
+                  setTypeFilter("all");
+                }}
+              >
                 Clear Filters
               </Button>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredUniversities.map((uni) => (
-                <Card 
-                  key={uni._id} 
-                  className="border-2 hover:shadow-xl transition-all hover:scale-[1.02] duration-300"
+                <Card
+                  key={uni._id}
+                  className="border-2 hover:shadow-xl transition-all hover:scale-[1.02] duration-300 flex flex-col h-full min-h-[320px]"
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
@@ -190,12 +198,14 @@ export default function Universities() {
                         </CardTitle>
                         <CardDescription className="flex items-center gap-2">
                           <MapPin className="h-4 w-4" />
-                          {uni.city || uni.address?.split(",")?.pop()?.trim() || "N/A"}
+                          {uni.address || uni.city || "N/A"}
                         </CardDescription>
                       </div>
-                      <Badge variant={uni.institutionType?.toLowerCase() === "public" ? "default" : "secondary"}>
-                        {uni.institutionType ? 
-                          uni.institutionType.charAt(0).toUpperCase() + uni.institutionType.slice(1) 
+                      <Badge
+                        variant={uni.institutionType?.toLowerCase() === "public" ? "default" : "secondary"}
+                      >
+                        {uni.institutionType
+                          ? uni.institutionType.charAt(0).toUpperCase() + uni.institutionType.slice(1)
                           : "Unknown"}
                       </Badge>
                     </div>
@@ -206,8 +216,8 @@ export default function Universities() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
+                  <CardContent className="flex flex-col flex-1 space-y-4 p-6 pt-0">
+                    <p className="text-sm text-muted-foreground line-clamp-4 flex-1">
                       {uni.description || "No description available."}
                     </p>
 
@@ -229,13 +239,15 @@ export default function Universities() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t">
-                      <Button 
+                    {/* View Details button fixed at bottom */}
+                    <div className="mt-auto pt-4 border-t">
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={handleViewDetails}
-                        className="gap-2"
+                        onClick={() => handleViewDetails(uni)}
+                        className="w-full gap-2"
                       >
-                        View Details 
+                        View Details
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </div>

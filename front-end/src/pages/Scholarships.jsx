@@ -160,76 +160,106 @@ export default function Scholarships() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredScholarships.map((sch) => (
                 <Card 
-                  key={sch._id || sch.id} 
-                  className="border-2 hover:shadow-xl transition-all hover:scale-[1.02] duration-300"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Award className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg leading-tight">{sch.title}</CardTitle>
-                          <CardDescription className="text-base font-medium mt-1">
-                            {sch.universityName}
-                          </CardDescription>
-                        </div>
-                      </div>
+  key={sch._id || sch.id} 
+  className="border-2 hover:shadow-xl transition-all hover:scale-[1.02] duration-300 flex flex-col h-full"
+>
+  <CardHeader className="pb-4">
+    <div className="flex items-start justify-between gap-4 mb-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Award className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <CardTitle className="text-lg leading-tight truncate">
+            {sch.title}
+          </CardTitle>
+          <CardDescription className="text-base font-medium mt-1 truncate">
+            {sch.universityName}
+          </CardDescription>
+        </div>
+      </div>
 
-                      <Badge variant={
-                        sch.type?.toLowerCase().includes("merit") ? "default" :
-                        sch.type?.toLowerCase().includes("need") ? "secondary" :
-                        "outline"
-                      }>
-                        {sch.type || "Unknown"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
+      <Badge 
+        className="shrink-0"
+        variant={
+          sch.type?.toLowerCase().includes("merit") ? "default" :
+          sch.type?.toLowerCase().includes("need")  ? "secondary" :
+          sch.type?.toLowerCase().includes("full")  ? "destructive" :
+          "outline"
+        }
+      >
+        {sch.type || "Unknown"}
+      </Badge>
+    </div>
+  </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {sch.description || "No description provided."}
-                    </p>
+  <CardContent className="space-y-5 flex-1 flex flex-col">
+    <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+      {sch.description || "No description provided."}
+    </p>
 
-                    <div className="grid md:grid-cols-3 gap-4 pt-4 border-t">
-                      <div className="flex items-start gap-3">
-                        <Percent className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-semibold">Scholarship</p>
-                          <p className="text-sm text-muted-foreground">{sch.percentage ? `${sch.percentage}%` : "N/A"}</p>
-                        </div>
-                      </div>
+    {/* Key information - organized in clean vertical groups */}
+    <div className="space-y-4 pt-3 border-t">
+      {/* Scholarship Amount */}
+      <div className="flex items-start gap-3">
+        <Percent className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">Scholarship</p>
+          <p className="text-sm text-muted-foreground">
+            {sch.percentage 
+              ? `${sch.percentage}% of tuition` 
+              : sch.amount 
+                ? `${sch.amount} ${sch.currency || ''}` 
+                : "N/A"}
+          </p>
+        </div>
+      </div>
 
-                      <div className="flex items-start gap-3">
-                        <Calendar className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-semibold">Deadline</p>
-                          <p className="text-sm text-muted-foreground">
-                            {sch.deadline 
-                              ? new Date(sch.deadline).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })
-                              : "N/A"}
-                          </p>
-                        </div>
-                      </div>
+      {/* Deadline - vertical style */}
+      <div className="flex items-start gap-3">
+        <Calendar className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">Application Deadline</p>
+          <p className="text-sm text-muted-foreground">
+            {sch.deadline 
+              ? new Date(sch.deadline).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })
+              : "Not specified"}
+          </p>
+        </div>
+      </div>
 
-                      <div className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-semibold">Eligibility</p>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {sch.eligibility || "Check university website"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+      {/* Eligibility - vertical style */}
+      <div className="flex items-start gap-3">
+        <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">Basic Eligibility</p>
+          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+            {sch.eligibility || "Please check the official university website for detailed requirements."}
+          </p>
+        </div>
+      </div>
+    </div>
 
-                  </CardContent>
-                </Card>
+    {/* Optional: Action button area */}
+    {sch.link && (
+      <div className="mt-auto pt-4">
+        <Button 
+          variant="outline" 
+          className="w-full gap-2"
+          asChild
+        >
+          <a href={sch.link} target="_blank" rel="noopener noreferrer">
+            View Details <ExternalLink className="h-4 w-4" />
+          </a>
+        </Button>
+      </div>
+    )}
+  </CardContent>
+</Card>
               ))}
             </div>
           )}

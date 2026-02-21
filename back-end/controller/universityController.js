@@ -444,7 +444,10 @@ export const addScholarship = async (req, res) => {
 
 export const getScholarships = async (req, res) => {
   try {
-    const university = await University.findById(req.user._id);
+    const university = await University.findById(req.user._id).select('scholarships');
+    if (!university) {
+      return res.status(404).json({ success: false, message: "University not found" });
+    }
     res.status(200).json({ success: true, scholarships: university.scholarships || [] });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch scholarships" });
@@ -473,7 +476,10 @@ export const addEvent = async (req, res) => {
 
 export const getEvents = async (req, res) => {
   try {
-    const university = await University.findById(req.user._id);
+    const university = await University.findById(req.user._id).select('events');
+    if (!university) {
+      return res.status(404).json({ success: false, message: "University not found" });
+    }
     res.status(200).json({ success: true, events: university.events || [] });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch events" });

@@ -54,7 +54,7 @@ export default function StudentScholarships() {
             <CardTitle>{s.name}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-primary font-semibold">Amount: {s.amount}</p>
+            <p className="text-primary font-semibold">Scholarship: {s.percentage ? `${s.percentage}%` : "N/A"}</p>
             {s.eligibility && <p className="text-sm mt-2"><span className="font-semibold">Eligibility:</span> {s.eligibility}</p>}
             {s.description && <p className="text-sm text-muted-foreground mt-2">{s.description}</p>}
             {/* <Button className="w-full mt-4">Apply</Button> */}

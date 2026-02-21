@@ -142,51 +142,116 @@ export default function Events() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <Card 
-                  key={event._id || event.id} 
-                  className="border-2 hover:shadow-xl transition-all hover:scale-[1.02] duration-300"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Calendar className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg leading-tight">{event.title}</CardTitle>
-                          <CardDescription className="text-base font-medium mt-1">
-                            {event.universityName}
-                          </CardDescription>
-                        </div>
-                      </div>
+  key={event._id || event.id}
+  className="border-2 hover:shadow-xl transition-all hover:scale-[1.02] duration-300 flex flex-col h-full"
+>
+  <CardHeader className="pb-4">
+    <div className="flex items-start justify-between gap-4 mb-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Calendar className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <CardTitle className="text-lg leading-tight truncate">
+            {event.title}
+          </CardTitle>
+          <CardDescription className="text-base font-medium mt-1 truncate">
+            {event.universityName}
+          </CardDescription>
+        </div>
+      </div>
 
-                      <Badge variant="outline">{event.type || "Event"}</Badge>
-                    </div>
+      <Badge 
+        variant={
+          event.type?.toLowerCase().includes("webinar") ? "secondary" :
+          event.type?.toLowerCase().includes("conference") ? "default" :
+          event.type?.toLowerCase().includes("workshop") ? "outline" :
+          "secondary"
+        }
+        className="shrink-0"
+      >
+        {event.type || "Event"}
+      </Badge>
+    </div>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {event.date 
-                          ? new Date(event.date).toLocaleDateString('en-US', {
-                              month: 'long',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })
-                          : "Date not specified"}
-                      </span>
-                    </div>
-                  </CardHeader>
+    {/* Date - prominent */}
+    <div className="flex items-center gap-2 text-sm font-medium text-foreground mt-1">
+      <Calendar className="h-4 w-4 text-primary" />
+      <span>
+        {event.date 
+          ? new Date(event.date).toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            })
+          : "Date not specified"}
+      </span>
+    </div>
 
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {event.description || "No description available."}
-                    </p>
+    {/* Optional: Time if you have it */}
+    {event.time && (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+        <span className="ml-6">at {event.time}</span>
+      </div>
+    )}
+  </CardHeader>
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground pt-4 border-t">
-                      <MapPin className="h-4 w-4" />
-                      <span>{event.location || "Location not specified"}</span>
-                    </div>
-                  </CardContent>
-                </Card>
+  <CardContent className="space-y-5 flex-1 flex flex-col">
+    {/* Description */}
+    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
+      {event.description || "No description available."}
+    </p>
+
+    {/* Location */}
+    <div className="flex items-start gap-3 pt-3 border-t">
+      <MapPin className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+      <div>
+        <p className="text-sm font-semibold text-foreground">Location</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {event.location || "Online / Not specified"}
+        </p>
+      </div>
+    </div>
+
+    {/* Optional: Event type / format if meaningful */}
+    {event.format && (
+      <div className="flex items-start gap-3">
+        <span className="text-sm font-medium text-muted-foreground">Format:</span>
+        <span className="text-sm">{event.format}</span>
+      </div>
+    )}
+
+    {/* Bottom action area */}
+    <div className="mt-auto pt-4">
+      {event.link || event.registrationLink ? (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full gap-2"
+          asChild
+        >
+          <a 
+            href={event.link || event.registrationLink} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            View Details / Register <ExternalLink className="h-4 w-4" />
+          </a>
+        </Button>
+      ) : (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full text-muted-foreground"
+          disabled
+        >
+          Details not available
+        </Button>
+      )}
+    </div>
+  </CardContent>
+</Card>
               ))}
             </div>
           )}

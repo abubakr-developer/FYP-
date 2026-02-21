@@ -9,15 +9,14 @@ const getPass = () => getEnv('PASSWORD_APP_EMAIL') || getEnv('APP_PASSWORD') || 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false,                  // false → use STARTTLS on port 587 (Google recommends this)
+  secure: false,               
   auth: {
-    user: getEnv('EMAIL'),      // ← must match your .env key
-    pass: getPass(),  // support multiple possible env names
+    user: getEnv('EMAIL'),      
+    pass: getPass(), 
   },
-  // Helpful for debugging (remove in production if you want)
-  logger: true,                   // logs SMTP conversation to console
+  
+  logger: true,                   
   debug: true,
-  // In case of certificate issues (rare on Gmail)
   tls: {
     rejectUnauthorized: false,
   },
@@ -27,7 +26,7 @@ const transporter = nodemailer.createTransport({
 transporter.verify((error, success) => {
   if (error) {
     console.error('Email transporter verification FAILED:', error);
-    // Helpful debug: if credentials missing, show a more specific error
+
     if (!getEnv('EMAIL') || !getPass()) {
       console.error('Missing email credentials. Ensure .env contains EMAIL and PASSWORD_APP_EMAIL (or APP_PASSWORD).');
     }

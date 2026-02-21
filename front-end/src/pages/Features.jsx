@@ -26,8 +26,8 @@ export default function Features() {
     },
     {
       icon: TrendingUp,
-      title: "Personalized Recommendations",
-      description: "AI-powered recommendation system that suggests universities based on your academic percentage and interests.",
+      title: "Personalized University Recommendations",
+      description: "Tailored university suggestions based on your academic percentage, field of interest, location preferences, and other key details you provide.",
       color: "text-accent"
     },
     {
@@ -41,12 +41,6 @@ export default function Features() {
       title: "Academic Profile",
       description: "Create detailed profiles with your academic achievements, interests, and career goals.",
       color: "text-accent"
-    },
-    {
-      icon: Bell,
-      title: "Real-time Notifications",
-      description: "Get instant alerts about admission deadlines, scholarship opportunities, and important updates.",
-      color: "text-primary"
     },
     {
       icon: Calendar,
@@ -181,8 +175,8 @@ export default function Features() {
                 <CardTitle>For Administrators</CardTitle>
                 <CardContent className="px-0 pt-4 space-y-2">
                   <p className="text-sm text-muted-foreground">✓ Platform oversight and control</p>
-                  <p className="text-sm text-muted-foreground">✓ User and university validation</p>
-                  <p className="text-sm text-muted-foreground">✓ System analytics and reporting</p>
+                  <p className="text-sm text-muted-foreground">✓ University validation & approval</p>
+                  <p className="text-sm text-muted-foreground">✓ Manage University and Student</p>
                   <p className="text-sm text-muted-foreground">✓ Content moderation</p>
                 </CardContent>
               </CardHeader>

@@ -45,7 +45,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* ── Public Routes (no login required) ── */}
           <Route path="/" element={<Home />} />
           <Route path="/features" element={<Features />} />
           <Route path="/about" element={<About />} />
@@ -54,7 +53,6 @@ const App = () => (
           <Route path="/scholarships" element={<Scholarships />} />
           <Route path="/events" element={<Events />} />
 
-          {/* Auth / Registration */}
           <Route path="/studentlogin" element={<StudentLogin />} />
           <Route path="/student-forgot-password" element={<StudentForgotPassword />} />
           <Route path="/student-reset-password" element={<StudentResetPassword />} />
@@ -66,30 +64,23 @@ const App = () => (
           <Route path="/role-selection" element={<RoleSelection isOpen={true} />} />
           <Route path="/university-register" element={<UniversityRegister />} />
 
-          {/* Public University Detail */}
-          <Route path="/universitydetailinformation/:id" element={<UniversityDetailedInformation />} />
-
-          {/* ── Protected Routes (require login) ── */}
-          {/* Student Routes */}
           <Route element={<ProtectedRoute allowedRole="student" />}>
             <Route path="/student-dashboard" element={<StudentDashboard />} />
             <Route path="/student-profile" element={<StudentProfile />} />
             <Route path="/student-recommendations" element={<StudentRecommendations />} />
             <Route path="/student-scholarships" element={<StudentScholarships />} />
             <Route path="/student-events" element={<StudentEvents />} />
+            <Route path="/universitydetailinformation/:id" element={<UniversityDetailedInformation />} />
           </Route>
 
-          {/* University Routes */}
           <Route element={<ProtectedRoute allowedRole="university" />}>
             <Route path="/university-dashboard" element={<UniversityDashboard />} />
           </Route>
 
-          {/* Admin Routes */}
           <Route element={<ProtectedRoute allowedRole="admin" />}>
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Route>
 
-          {/* Catch-all 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

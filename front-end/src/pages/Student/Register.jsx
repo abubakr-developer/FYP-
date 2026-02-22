@@ -9,7 +9,6 @@ import { registerSchema, validateForm } from "@/lib/validation";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
-// API Base URL - Update this to match your backend URL
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Register() {
@@ -54,7 +53,6 @@ export default function Register() {
     setIsSubmitting(true);
     setErrors({});
 
-    // Parse percentage as number for validation
     const dataToValidate = {
       ...formData,
       percentage: formData.percentage ? parseFloat(formData.percentage) : 0,
@@ -111,7 +109,7 @@ export default function Register() {
 
         // Redirect to login or dashboard
         setTimeout(() => {
-          navigate("/studentlogin"); // or navigate("/dashboard") if auto-login
+          navigate("/studentlogin");
         }, 1500);
       }
     } catch (error) {

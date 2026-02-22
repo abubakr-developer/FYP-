@@ -1,6 +1,5 @@
-// src/pages/UniversityDetail.jsx
 import { useState, useEffect } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";   // ← add useLocation
+import { useParams, Link, useLocation } from "react-router-dom";  
 import axios from "axios";
 import {
   Card,
@@ -11,14 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, GraduationCap, ExternalLink, MapPin, Star, AlertTriangle, CheckCircle } from "lucide-react";
+import { ArrowLeft, GraduationCap, ExternalLink, MapPin, Star, AlertTriangle, CheckCircle, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function UniversityDetail() {
   const { id } = useParams();
-  const location = useLocation();                    // ← added
+  const location = useLocation();                   
   const { toast } = useToast();
 
   const [university, setUniversity] = useState(null);
@@ -26,7 +25,7 @@ export default function UniversityDetail() {
 
   // Read mode from URL query (?mode=eligible or ?mode=ineligible)
   const searchParams = new URLSearchParams(location.search);
-  const viewMode = searchParams.get("mode") || "full";  // default = show all
+  const viewMode = searchParams.get("mode") || "full";  
   const department = searchParams.get("department");
 
   useEffect(() => {
@@ -91,7 +90,6 @@ export default function UniversityDetail() {
       p.faculty === department || p.department === department
     );
   }
-  // "full" → show all (when coming from Universities list / direct URL)
 
   const hasPrograms = displayedPrograms.length > 0;
 
@@ -109,11 +107,18 @@ export default function UniversityDetail() {
       <Card className="border-2 mb-10">
         <CardHeader>
           <CardTitle className="text-3xl mb-2">{university.universityName || university.institutionName}</CardTitle>
+                      {university.phone && (
+              <div className="flex gap-2">
+                <Phone className="h-4 w-4" />
+                {university.phone}
+              </div>
+            )}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-base text-muted-foreground">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               {university.address}
             </div>
+
             <div className="flex items-center gap-2">
               <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
               Rating: <span className="font-medium">{university.rating}</span>

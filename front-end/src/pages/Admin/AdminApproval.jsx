@@ -6,14 +6,13 @@ import { AlertCircle, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
-// Define API base URL (consistent with your other pages)
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function AdminApprovals() {
   const { toast } = useToast();
   const [pendingUniversities, setPendingUniversities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [approvingIds, setApprovingIds] = useState(new Set()); // Track approving states per ID
+  const [approvingIds, setApprovingIds] = useState(new Set());
 
   useEffect(() => {
     fetchPendingUniversities();

@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 const BASE_URL = "/api/university";
 
 export async function apiFetch(endpoint, options = {}) {
-  // Try multiple possible token keys – university portal often uses different key
+
   let token =
     localStorage.getItem("universityToken") ||
     localStorage.getItem("uniToken") ||
@@ -20,11 +20,6 @@ export async function apiFetch(endpoint, options = {}) {
   } else {
     console.warn("No token found in localStorage for apiFetch");
   }
-
-  // ────────────────────────────────────────────────
-  // Rest of your existing code (FormData handling, headers merge, fetch, etc.)
-  // Keep everything below unchanged
-  // ────────────────────────────────────────────────
 
   const isFormData = options.body instanceof FormData;
 

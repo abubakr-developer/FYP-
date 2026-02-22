@@ -14,7 +14,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
-// Define API base URL (uses .env variable or fallback to localhost)
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function UniversityRegister() {

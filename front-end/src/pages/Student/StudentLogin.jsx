@@ -28,7 +28,7 @@ export default function StudentLogin() {
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    const field = id.split("-").pop(); // student-email → email
+    const field = id.split("-").pop();
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
@@ -62,14 +62,13 @@ export default function StudentLogin() {
         body: JSON.stringify({
           email: formData.email.trim(),
           password: formData.password,
-          role: "student", // optional - helps backend know which collection to check
+          role: "student",
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // Show backend error message (wrong credentials, user not found, etc.)
         toast({
           title: "Login Failed",
           description: data.message || "Invalid email or password",
@@ -92,7 +91,6 @@ export default function StudentLogin() {
         description: "Welcome back! Redirecting to your dashboard...",
       });
 
-      // Redirect after short delay for better UX
       setTimeout(() => {
         setIsSubmitting(false);
         navigate("/student-dashboard");
@@ -143,16 +141,8 @@ export default function StudentLogin() {
           </p>
         </div>
 
-        {/* Demo Alert - can be removed later */}
-        <Alert className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/20">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-sm text-blue-900 dark:text-blue-200">
-            Enter your registered email and password to sign in.
-          </AlertDescription>
-        </Alert>
-
         {/* Login Card */}
-        <Card className="border-2 shadow-xl">
+        <Card className="border-2 shadow-x1">
           <CardHeader>
             <CardTitle>Welcome Back, Student!</CardTitle>
             <CardDescription>
@@ -197,7 +187,7 @@ export default function StudentLogin() {
             </div>
 
             <Button
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+              className="w-full bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-800 hover:to-cyan-600"
               onClick={handleLogin}
               disabled={isSubmitting}
             >
@@ -216,22 +206,12 @@ export default function StudentLogin() {
             </div>
 
             <Link to="/register">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full bg-background hover:bg-gray-500">
                 Create Student Account
               </Button>
             </Link>
           </CardContent>
         </Card>
-
-        {/* Additional Links */}
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>
-            Looking for a different portal?{" "}
-            <Link to="/" className="text-primary hover:underline">
-              Go back to select role
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );

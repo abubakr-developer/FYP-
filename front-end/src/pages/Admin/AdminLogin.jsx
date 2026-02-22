@@ -98,7 +98,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 via-red-50 to-background dark:from-orange-950/20 dark:via-red-950/10 dark:to-background">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-cyan-50 via-red-50 to-background dark:from-orange-950/20 dark:via-red-950/10 dark:to-background">
       <div className="w-full max-w-md">
         {/* Back Button */}
         <Link 
@@ -154,9 +154,6 @@ export default function AdminLogin() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="admin-password">Password</Label>
-                <Link to="#" className="text-sm text-primary hover:underline">
-                  Reset
-                </Link>
               </div>
               <Input 
                 id="admin-password" 
@@ -205,16 +202,6 @@ export default function AdminLogin() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Additional Links */}
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>
-            Not an administrator?{" "}
-            <Link to="/" className="text-primary hover:underline">
-              Go back to select role
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );

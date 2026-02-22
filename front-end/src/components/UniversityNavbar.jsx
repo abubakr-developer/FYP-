@@ -12,7 +12,6 @@ export default function UniversityNavbar({ setActiveTab }) {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // 1. Try Local Storage first for immediate display
       try {
         const storedUser = JSON.parse(localStorage.getItem("user")) || {};
         const university = storedUser.university || storedUser;
@@ -22,7 +21,6 @@ export default function UniversityNavbar({ setActiveTab }) {
         console.error("Error parsing user data", e);
       }
 
-      // 2. Fetch fresh profile from API to ensure name is correct
       const token = localStorage.getItem("universityToken") || localStorage.getItem("token");
       if (token) {
         try {
@@ -58,32 +56,24 @@ export default function UniversityNavbar({ setActiveTab }) {
 
     try {
       const token = localStorage.getItem("universityToken") || localStorage.getItem("token");
-      // Call your logout endpoint
+
       const response = await fetch(`${API_URL}/api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Include token if your university backend uses JWT in header
           Authorization: `Bearer ${token}`,
         },
-        // credentials: "include",   // ← uncomment ONLY if using httpOnly cookies instead of localStorage
       });
 
-      // We clear local data regardless of response status in most JWT setups
       localStorage.removeItem("token");
       localStorage.removeItem("universityToken");
       localStorage.removeItem("user");
 
-      // Redirect to landing / login page
       navigate("/");
-
-      // Optional hard redirect if you have issues with protected routes:
-      // window.location.href = "/";
 
     } catch (error) {
       console.error("University logout failed:", error);
 
-      // Fail-safe: still clear data and redirect
       localStorage.removeItem("token");
       localStorage.removeItem("universityToken");
       localStorage.removeItem("user");

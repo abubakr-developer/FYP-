@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,7 +24,6 @@ export default function UniversityLogin() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Define API base URL from env or fallback to localhost
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const handleChange = (e) => {
@@ -47,27 +52,31 @@ export default function UniversityLogin() {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/university/login`, {
-        email: formData.email.trim(),
-        password: formData.password,
-      }, { withCredentials: true });
+      const response = await axios.post(
+        `${API_URL}/api/university/login`,
+        {
+          email: formData.email.trim(),
+          password: formData.password,
+        },
+        { withCredentials: true },
+      );
 
       toast({
         title: "Login Successful",
-        description: response.data.message || "Welcome to the University Portal",
+        description:
+          response.data.message || "Welcome to the University Portal",
       });
 
       if (response.data.token) {
         localStorage.setItem("universityToken", response.data.token);
       }
-      
-      // FIX: Store university details so Navbar can read them immediately
+
+      // Store university details so Navbar can read them immediately
       if (response.data.university) {
         localStorage.setItem("user", JSON.stringify(response.data.university));
       }
 
       navigate("/university-dashboard");
-
     } catch (error) {
       console.error("Login error:", error);
 
@@ -84,7 +93,8 @@ export default function UniversityLogin() {
           errorMessage = data.message;
         }
       } else if (error.request) {
-        errorMessage = "Cannot reach the server. Check your connection or server status.";
+        errorMessage =
+          "Cannot reach the server. Check your connection or server status.";
       }
 
       toast({
@@ -108,7 +118,7 @@ export default function UniversityLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-50 via-pink-50 to-background dark:from-purple-950/20 dark:via-pink-950/10 dark:to-background">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-50 via-cyan-90 to-background dark:from-purple-950/20 dark:via-pink-950/10 dark:to-background">
       <div className="w-full max-w-md">
         <Link
           to="/"
@@ -127,13 +137,6 @@ export default function UniversityLogin() {
             Manage your institution's profile and programs
           </p>
         </div>
-
-        <Alert className="mb-6 border-purple-200 bg-purple-50 dark:border-purple-900 dark:bg-purple-950/20">
-          <Info className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-          <AlertDescription className="text-sm text-purple-900 dark:text-purple-200">
-            <strong>Note:</strong> Authentication is connected to the backend.
-          </AlertDescription>
-        </Alert>
 
         <Card className="border-2 shadow-xl">
           <CardHeader>
@@ -161,7 +164,10 @@ export default function UniversityLogin() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="university-password">Password</Label>
-                <Link to="/forget-password" className="text-sm text-primary hover:underline">
+                <Link
+                  to="/forget-password"
+                  className="text-sm text-primary hover:underline"
+                >
                   Forgot?
                 </Link>
               </div>
@@ -179,42 +185,29 @@ export default function UniversityLogin() {
             </div>
             <Button
               variant="outline"
-              className="w-full mt-2"
+              className="w-full mt-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
               disabled={isSubmitting}
               onClick={handleLogin}
             >
               Login
             </Button>
 
-<CardDescription>
-    If you don't have an account yet, please register your university to access the portal.
-  </CardDescription>
+            <CardDescription>
+              If you don't have an account yet, please register your university
+              to access the portal.
+            </CardDescription>
 
-<Link to="/university-register">
-  <Button
-    variant="outline"
-    className="w-full mt-2"
-    disabled={isSubmitting}
-  >
-    Register Your University
-  </Button>
-</Link>
-
-
-            
-
-            
+            <Link to="/university-register">
+              <Button
+                variant="outline"
+                className="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white"
+                disabled={isSubmitting}
+              >
+                Register Your University
+              </Button>
+            </Link>
           </CardContent>
         </Card>
-
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>
-            Looking for a different portal?{" "}
-            <Link to="/" className="text-primary hover:underline">
-              Go back to select role
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );

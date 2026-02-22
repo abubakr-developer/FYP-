@@ -15,9 +15,7 @@ import ProgramsTab from "@/pages/University/ProgramsTab";
 import ScholarshipsTab from "@/pages/University/ScholarshipsTab";
 import EventsTab from "@/pages/University/EventsTab"; 
 
-// ────────────────────────────────────────────────
-// Reusable API helper (unchanged)
-// ────────────────────────────────────────────────
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const API_BASE = `${API_URL}/api/university`;
 
@@ -59,7 +57,6 @@ async function apiFetch(endpoint, options = {}) {
   return data;
 }
 
-// ────────────────────────────────────────────────
 export default function UniversityDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -236,12 +233,6 @@ export default function UniversityDashboard() {
 
       <section className="py-8 px-4 flex-1">
         <div className="container max-w-6xl mx-auto">
-          {/* <Alert className="mb-6 border-primary/20 bg-primary/5">
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Connected to real backend endpoints. Authentication via JWT required.
-            </AlertDescription>
-          </Alert> */}
 
           {/* Dynamic Stats Cards */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">

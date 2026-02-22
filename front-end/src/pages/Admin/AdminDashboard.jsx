@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   const handleUpdateRating = async (uniId, newRating) => {
     if (newRating < 0 || newRating > 5) return;
     try {
-      await axios.put(`${API_URL}/api/superadmin/universities/${uniId}`, { rating: newRating }, getAuthConfig());
+      await axios.put(`${API_URL}/api/superadmin/universities/${uniId}/rating`, { rating: newRating }, getAuthConfig());
       toast({ title: "Rating Updated", description: `University rating set to ${newRating} stars` });
       fetchAllData();
     } catch (err) {
@@ -243,7 +243,8 @@ export default function AdminDashboard() {
                                 {[1,2,3,4,5].map((r) => (
                                   <Button
                                     key={r}
-                                    variant={uni.rating === r ? "default" : "outline"}
+                                    type="button"
+                                    variant={Number(uni.rating) === r ? "default" : "outline"}
                                     size="sm"
                                     className="h-8 w-8 p-0"
                                     onClick={() => handleUpdateRating(uni._id, r)}

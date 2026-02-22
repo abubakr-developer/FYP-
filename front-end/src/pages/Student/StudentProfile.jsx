@@ -35,7 +35,6 @@ export default function StudentProfile() {
         });
         const data = res.data.data;
         setProfileData({
-          // FIX: Combine firstName and lastName into fullName for display (backend returns separate fields)
           fullName: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
           email: data.email || "",
           intermediatePercentage: data.intermediatePercentage || "",
@@ -76,7 +75,7 @@ export default function StudentProfile() {
     try {
       const token = localStorage.getItem("token");
 
-      // FIX: Improved splitting to handle multiple spaces/extra names
+      // Improved splitting to handle multiple spaces/extra names
       const nameParts = profileData.fullName.trim().split(/\s+/);
       const firstName = nameParts.shift() || '';
       const lastName = nameParts.join(' ');
@@ -100,7 +99,6 @@ export default function StudentProfile() {
       if (err.response && err.response.status === 401) {
         localStorage.removeItem("token");
         toast({ title: "Session Expired", description: "Please log in again.", variant: "destructive" });
-        // You might want to add navigation here, e.g., window.location.href = '/student-login';
       }
       toast({ title: "Error", description: err.response?.data?.message || "Failed to save profile", variant: "destructive" });
     }

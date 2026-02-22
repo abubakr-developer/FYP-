@@ -179,9 +179,7 @@ export const updateStudentProfile = async (req, res) => {
   }
 };
 
-
 // GET PROFILE
-
 export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
@@ -199,7 +197,6 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // Existing compareUniversities
 export const compareUniversities = async (req, res) => {
@@ -227,6 +224,7 @@ export const compareUniversities = async (req, res) => {
       hecRecognized: uni.hecRecognized,
       establishedYear: uni.establishedYear,
       address: uni.address,
+      phone: uni.phone,
       website: uni.website,
       rating: uni.rating,
       stats: uni.stats,
@@ -249,9 +247,6 @@ export const compareUniversities = async (req, res) => {
 // GET RECOMMENDATIONS
 export const getRecommendations = async (req, res) => {
   try {
-    console.log('╔════════════════════════════════════════════╗');
-    console.log('║  getRecommendations (body-based) CALLED    ║');
-    console.log('╚════════════════════════════════════════════╝');
     console.log('Time:', new Date().toISOString());
     console.log('Request body:', req.body);
 
@@ -308,6 +303,7 @@ export const getRecommendations = async (req, res) => {
         shortName: university.shortName || '',
         logo: university.logo || '',
         address: university.address || '',
+        phone: university.phone || '',
         type: university.type || '',
         hecRecognized: university.hecRecognized,
         rating: university.rating || 0,
@@ -385,12 +381,8 @@ export const getRecommendations = async (req, res) => {
   }
 };
 
-
 // GET MY RECOMMENDATIONS (uses saved profile)
 export const getMyRecommendations = async (req, res) => {
-  console.log('╔════════════════════════════════════════════╗');
-  console.log('║  getMyRecommendations (profile-based) CALLED║');
-  console.log('╚════════════════════════════════════════════╝');
   console.log('Time:', new Date().toISOString());
   console.log('User from token:', req.user?._id || 'NO USER');
 
@@ -448,6 +440,7 @@ export const getMyRecommendations = async (req, res) => {
         shortName: university.shortName || '',
         logo: university.logo || '',
         address: university.address || '',
+        phone: university.phone || '',
         type: university.type || '',
         hecRecognized: university.hecRecognized,
         rating: university.rating || 0,
@@ -516,8 +509,7 @@ export const getMyRecommendations = async (req, res) => {
     console.log('Final summary:');
     console.log(`  Eligible universities: ${recommendations.eligible.length}`);
     console.log(`  Not eligible universities: ${recommendations.notEligible.length}`);
-    console.log('================================================================');
-
+    
     res.status(200).json({ success: true, data: recommendations });
   } catch (error) {
     console.error('ERROR in getMyRecommendations:', error);

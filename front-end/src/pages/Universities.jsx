@@ -51,7 +51,6 @@ export default function Universities() {
     fetchUniversities();
   }, []);
 
-  // Extract unique cities & types for filters (you can make this dynamic later)
   const cities = ["all", "Lahore", "Faisalabad", "Multan", "Rawalpindi", "Gujranwala", "Sialkot", "Gujrat", "Bahawalpur", "Sargodha"];
   const types = ["all", "Public", "Private"];
 
@@ -76,10 +75,8 @@ export default function Universities() {
   });
 
   const handleViewDetails = (uni) => {
-    // You can pass university ID or slug if your details page supports it
-    // For now going to student login as per your original code
+
     navigate("/studentlogin");
-    // Alternative: navigate(`/university/${uni._id}`);
   };
 
   if (loading) {

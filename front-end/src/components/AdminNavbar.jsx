@@ -1,4 +1,3 @@
-// src/components/AdminNavbar.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { Shield, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,8 +43,7 @@ export default function AdminNavbar({ activeTab, setActiveTab }) {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container h-16 flex items-center justify-between px-4 md:px-6">
-
-        {/* Logo */}
+         {/* logo */}
         <Link to="/admin-dashboard" className="flex items-center gap-2">
           <Shield className="h-8 w-8 text-primary" />
           <span className="text-xl font-bold bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent">

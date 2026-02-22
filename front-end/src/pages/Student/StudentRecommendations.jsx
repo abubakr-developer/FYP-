@@ -1,4 +1,3 @@
-// src/pages/StudentRecommendations.jsx
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -9,8 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge"; // ← add this import
-import { AlertTriangle, TrendingUp } from "lucide-react"; // ← optional icon
+import { Badge } from "@/components/ui/badge"; 
+import { AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 

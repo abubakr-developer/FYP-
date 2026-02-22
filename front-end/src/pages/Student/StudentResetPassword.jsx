@@ -146,7 +146,7 @@ export default function StudentResetPassword() {
                     placeholder="123456"
                     value={otp}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, ""); // only numbers
+                      const val = e.target.value.replace(/\D/g, "");
                       setOtp(val);
                       if (error) setError("");
                     }}

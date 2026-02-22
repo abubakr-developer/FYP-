@@ -1,11 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react"; // ← added for loading state (optional but good UX)
+import { useState } from "react"; 
 
 export default function StudentNavbar({ setActiveTab }) {
   const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // optional: disable button during request
+  const [isLoggingOut, setIsLoggingOut] = useState(false); 
 
   // Get logged-in student from localStorage
   const student = JSON.parse(localStorage.getItem("user")) || {};
@@ -21,39 +21,22 @@ export default function StudentNavbar({ setActiveTab }) {
     setIsLoggingOut(true);
 
     try {
-      // Option A: Using fetch (no extra dependency needed)
       const response = await fetch("/api/auth/logout", {
-        method: "POST",           // or "GET" — depends on your backend
+        method: "POST",       
         headers: {
           "Content-Type": "application/json",
-          // If your backend expects the token in header (common with JWT)
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        // credentials: "include",   // uncomment if using cookies instead of localStorage
       });
 
-      // Option B: If you prefer axios (uncomment if installed)
-      // import axios from "axios";
-      // await axios.post("/api/auth/logout", {}, {
-      //   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      // });
-
-      // Even if backend returns 401/403 or error — we still want to logout locally
-      // Many JWT backends don't require a successful response for logout
-
-      // Clear local storage / session
       localStorage.removeItem("token");
       localStorage.removeItem("user");
 
-      // Redirect to home page ("/" = landing page)
       navigate("/");
-
-      // Optional: force refresh if you have protected routes listening to storage events
-      // window.location.href = "/";   // hard refresh (use only if needed)
 
     } catch (error) {
       console.error("Logout failed:", error);
-      // Still logout locally even if API fails (fail-safe)
+
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       navigate("/");

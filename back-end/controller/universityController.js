@@ -66,7 +66,7 @@ function getProgramFaculty(programName) {
     return 'Faculty of Management & Administrative Sciences';
   }
 
-  // 7. Faculty of Pharmacy & Allied Health Sciences (Check before Sciences)
+  // 6. Faculty of Pharmacy & Allied Health Sciences (Check before Sciences)
   if (programLower.includes('pharmacy') || 
       programLower.includes('pharmd') || 
       programLower.includes('physiotherapy') || 
@@ -81,7 +81,7 @@ function getProgramFaculty(programName) {
     return 'Faculty of Pharmacy & Allied Health Sciences';
   }
 
-  // 6. Faculty of Sciences (Generic Science check last)
+  // 7. Faculty of Sciences (Generic Science check last)
   if (programLower.includes('biochemistry') || 
       programLower.includes('biology') || 
       programLower.includes('zoology') || 
@@ -228,24 +228,15 @@ export const loginUniversity = async (req, res) => {
       });
     }
 
-    // 6. Generate token – IMPORTANT: match role with middleware
     const token = jwt.sign(
       {
         id: university._id,
-        role: "university",           // ← must match isUniversityAdmin check
+        role: "university",          
         email: university.officialEmail,
       },
       process.env.JWT_SECRET_KEY,
-      { expiresIn: "7d" }                  // longer for university portal
+      { expiresIn: "7d" }                  
     );
-
-    // Optional: set httpOnly cookie (more secure than localStorage)
-    // res.cookie("token", token, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   sameSite: "strict",
-    //   maxAge: 7 * 24 * 60 * 60 * 1000,
-    // });
 
     return res.status(200).json({
       success: true,

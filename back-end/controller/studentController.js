@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import User from '../models/user.js';
 import University from '../models/university.js';
+import { parseEligibilityRange } from '../utils/criteriaParser.js';
 
 function getProgramFaculty(programName) {
   if (!programName || typeof programName !== 'string') {
@@ -317,14 +318,12 @@ export const getRecommendations = async (req, res) => {
         const pName = program.programName || program.name;
         const programFaculty = getProgramFaculty(pName);
         
-        let minPerc = parseFloat(program.minPercentage);
-        if (isNaN(minPerc) || minPerc === 0) {
-           const match = (program.eligibilityCriteria || '').toString().match(/(\d+(\.\d+)?)/);
-           minPerc = match ? parseFloat(match[0]) : 0;
-        }
-        
-        const maxPerc = parseFloat(program.maxPercentage) || 100;
-        console.log(`  • "${pName || '(no name)'}" → ${programFaculty} (active: ${program.isActive ?? 'unset'}) Min: ${minPerc}%`);
+        const range = parseEligibilityRange(program.eligibilityCriteria);
+        const explicitMin = Number(program.minPercentage);
+        const explicitMax = Number(program.maxPercentage);
+        const minPerc = Number.isFinite(explicitMin) && explicitMin > 0 ? explicitMin : range.min;
+        const maxPerc = Number.isFinite(explicitMax) ? explicitMax : range.max;
+        console.log(`  • "${pName || '(no name)'}" → ${programFaculty} (active: ${program.isActive ?? 'unset'}) Min: ${minPerc}% Max: ${maxPerc}%`);
 
         if (programFaculty === fieldOfInterest && (program.isActive !== false)) {
           console.log('     → Faculty matched');
@@ -454,14 +453,12 @@ export const getMyRecommendations = async (req, res) => {
         const pName = program.programName || program.name;
         const programFaculty = getProgramFaculty(pName);
         
-        let minPerc = parseFloat(program.minPercentage);
-        if (isNaN(minPerc) || minPerc === 0) {
-           const match = (program.eligibilityCriteria || '').toString().match(/(\d+(\.\d+)?)/);
-           minPerc = match ? parseFloat(match[0]) : 0;
-        }
-        
-        const maxPerc = parseFloat(program.maxPercentage) || 100;
-        console.log(`  • "${pName || '(no name)'}" → ${programFaculty} (active: ${program.isActive ?? 'unset'}) Min: ${minPerc}%`);
+        const range = parseEligibilityRange(program.eligibilityCriteria);
+        const explicitMin = Number(program.minPercentage);
+        const explicitMax = Number(program.maxPercentage);
+        const minPerc = Number.isFinite(explicitMin) && explicitMin > 0 ? explicitMin : range.min;
+        const maxPerc = Number.isFinite(explicitMax) ? explicitMax : range.max;
+        console.log(`  • "${pName || '(no name)'}" → ${programFaculty} (active: ${program.isActive ?? 'unset'}) Min: ${minPerc}% Max: ${maxPerc}%`);
 
         if (programFaculty === user.fieldOfInterest && (program.isActive !== false)) {
           console.log('     → Faculty matched');
@@ -665,12 +662,11 @@ export const getUniversityDetails = async (req, res) => {
         const pName = p.programName || p.name;
         const programFaculty = getProgramFaculty(pName);
         
-        let minPerc = parseFloat(p.minPercentage);
-        if (isNaN(minPerc) || minPerc === 0) {
-           const match = (p.eligibilityCriteria || '').toString().match(/(\d+(\.\d+)?)/);
-           minPerc = match ? parseFloat(match[0]) : 0;
-        }
-        const maxPerc = parseFloat(p.maxPercentage) || 100;
+        const range = parseEligibilityRange(p.eligibilityCriteria);
+        const explicitMin = Number(p.minPercentage);
+        const explicitMax = Number(p.maxPercentage);
+        const minPerc = Number.isFinite(explicitMin) && explicitMin > 0 ? explicitMin : range.min;
+        const maxPerc = Number.isFinite(explicitMax) ? explicitMax : range.max;
 
         let isEligible = false;
         let ineligibilityReason = null;
@@ -709,6 +705,71 @@ export const getUniversityDetails = async (req, res) => {
     res.status(200).json({ success: true, data });
   } catch (error) {
     console.error("getUniversityDetails error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+export const getMeritLists = async (req, res) => {
+  try {
+    const { universityId } = req.query;
+    if (!universityId || !mongoose.Types.ObjectId.isValid(universityId)) {
+      return res.status(400).json({ success: false, message: "University ID is required" });
+    }
+
+    const university = await University.findById(universityId).select('-password -registeredStudents');
+    if (!university) {
+      return res.status(404).json({ success: false, message: "University not found" });
+    }
+
+    const student = await User.findById(req.user._id);
+    const studentPerc = student?.intermediatePercentage || 0;
+    const studentField = student?.fieldOfInterest || "";
+
+    const programs = (university.programs || [])
+      .filter(p => p.isActive !== false && p.meritsListUrl)
+      .map(p => {
+        const pName = p.programName || p.name;
+        const programFaculty = getProgramFaculty(pName);
+        const range = parseEligibilityRange(p.eligibilityCriteria);
+        const explicitMin = Number(p.minPercentage);
+        const explicitMax = Number(p.maxPercentage);
+        const minPerc = Number.isFinite(explicitMin) && explicitMin > 0 ? explicitMin : range.min;
+        const maxPerc = Number.isFinite(explicitMax) ? explicitMax : range.max;
+
+        let isEligible = false;
+        let ineligibilityReason = null;
+        if (programFaculty === studentField) {
+          if (studentPerc >= minPerc && studentPerc <= maxPerc) {
+            isEligible = true;
+          } else {
+            ineligibilityReason = studentPerc < minPerc
+              ? `Min ${minPerc}% required`
+              : `Exceeds max ${maxPerc}%`;
+          }
+        } else {
+          ineligibilityReason = "Field mismatch";
+        }
+
+        return {
+          _id: p._id,
+          programName: pName,
+          universityName: university.institutionName,
+          description: p.description,
+          level: p.level,
+          duration: p.duration,
+          feePerSemester: p.fee || p.feePerSemester || 'N/A',
+          meritsListUrl: p.meritsListUrl,
+          isEligible,
+          ineligibilityReason,
+          faculty: programFaculty,
+          minPercentage: minPerc,
+          maxPercentage: maxPerc,
+        };
+      });
+
+    res.status(200).json({ success: true, data: { universityName: university.institutionName, universityId: university._id, programs } });
+  } catch (error) {
+    console.error("getMeritLists error:", error);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

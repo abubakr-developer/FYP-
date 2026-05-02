@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendOtpEmail } from "../utils/sendEmail.js";
+import { parseEligibilityRange } from "../utils/criteriaParser.js";
+import { uploadToCloudinary } from "../middleware/multer.js";
 
 
 function getProgramFaculty(programName) {
@@ -379,13 +381,28 @@ export const addProgram = async (req, res) => {
       return match ? parseFloat(match[0]) : 0;
     };
 
+    const range = parseEligibilityRange(programData.eligibilityCriteria);
     if (programData.minPercentage !== undefined) {
       programData.minPercentage = extractNumber(programData.minPercentage);
-    } else if (programData.eligibilityCriteria) {
-      programData.minPercentage = extractNumber(programData.eligibilityCriteria);
+    } else {
+      programData.minPercentage = range.min;
     }
     
-    if (programData.maxPercentage) programData.maxPercentage = extractNumber(programData.maxPercentage);
+    if (programData.maxPercentage !== undefined) {
+      programData.maxPercentage = extractNumber(programData.maxPercentage);
+    } else {
+      programData.maxPercentage = range.max;
+    }
+
+    // Handle file upload if provided
+    if (req.file) {
+      try {
+        programData.meritsListUrl = await uploadToCloudinary(req.file.buffer, 'programs/merits-list');
+      } catch (uploadErr) {
+        console.error("File upload error:", uploadErr);
+        return res.status(500).json({ success: false, message: "File upload failed" });
+      }
+    }
 
     const faculty = getProgramFaculty(programData.programName || programData.name || "");
 
@@ -517,14 +534,29 @@ export const updateProgram = async (req, res) => {
     if (updates.duration) setFields["programs.$.duration"] = updates.duration;
     if (updates.eligibilityCriteria) {
         setFields["programs.$.eligibilityCriteria"] = updates.eligibilityCriteria;
+        const range = parseEligibilityRange(updates.eligibilityCriteria);
         if (updates.minPercentage === undefined) {
-             setFields["programs.$.minPercentage"] = extractNumber(updates.eligibilityCriteria);
+             setFields["programs.$.minPercentage"] = range.min;
+        }
+        if (updates.maxPercentage === undefined) {
+             setFields["programs.$.maxPercentage"] = range.max;
         }
     }
     if (updates.fee) setFields["programs.$.fee"] = updates.fee;
     if (updates.seats) setFields["programs.$.seats"] = updates.seats;
     if (updates.minPercentage !== undefined) setFields["programs.$.minPercentage"] = extractNumber(updates.minPercentage);
     if (updates.maxPercentage !== undefined) setFields["programs.$.maxPercentage"] = extractNumber(updates.maxPercentage);
+    
+    // Handle file upload if provided
+    if (req.file) {
+      try {
+        const meritsListUrl = await uploadToCloudinary(req.file.buffer, 'programs/merits-list');
+        setFields["programs.$.meritsListUrl"] = meritsListUrl;
+      } catch (uploadErr) {
+        console.error("File upload error:", uploadErr);
+        return res.status(500).json({ success: false, message: "File upload failed" });
+      }
+    }
 
     const updateQuery = { $set: setFields };
 

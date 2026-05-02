@@ -17,6 +17,7 @@ export default function ProgramsTab({ apiFetch }) {
     eligibilityCriteria: "",
     fee: "",
     seats: "",
+    meritsListFile: null,
   });
 
   const [programs, setPrograms] = useState([]);
@@ -65,16 +66,38 @@ export default function ProgramsTab({ apiFetch }) {
     }
 
     try {
+      let body;
+      let headers = {};
+
+      if (programData.meritsListFile) {
+        const formData = new FormData();
+        formData.append("programName", programData.programName);
+        formData.append("duration", programData.duration);
+        formData.append("eligibilityCriteria", programData.eligibilityCriteria);
+        formData.append("fee", parsed.fee || "");
+        formData.append("seats", parsed.seats || "");
+        formData.append("meritsListFile", programData.meritsListFile);
+        body = formData;
+      } else {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify(parsed);
+      }
+
       await apiFetch(editingId ? `/programs/${editingId}` : "/programs", {
         method: editingId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(parsed),
+        headers,
+        body,
       });
 
       toast({ title: "Success", description: `Program ${editingId ? "updated" : "added"} successfully` });
-      setProgramData({ programName: "", duration: "", eligibilityCriteria: "", fee: "", seats: "" });
+      setProgramData({ 
+        programName: "", 
+        duration: "", 
+        eligibilityCriteria: "", 
+        fee: "", 
+        seats: "",
+        meritsListFile: null,
+      });
       setErrors({});
       loadPrograms();
     } catch (err) {
@@ -95,6 +118,8 @@ export default function ProgramsTab({ apiFetch }) {
       eligibilityCriteria: program.eligibilityCriteria || "",
       fee: program.fee?.toString() || "",
       seats: program.seats?.toString() || "",
+      meritsListFile: null,
+      meritsListUrl: program.meritsListUrl || null,
     });
     setEditingId(program._id);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -112,7 +137,14 @@ export default function ProgramsTab({ apiFetch }) {
   };
 
   const handleCancelEdit = () => {
-    setProgramData({ programName: "", duration: "", eligibilityCriteria: "", fee: "", seats: "" });
+    setProgramData({ 
+      programName: "", 
+      duration: "", 
+      eligibilityCriteria: "", 
+      fee: "", 
+      seats: "",
+      meritsListFile: null,
+    });
     setEditingId(null);
     setErrors({});
   };
@@ -192,6 +224,22 @@ export default function ProgramsTab({ apiFetch }) {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Merit List (PDF/Word - optional)</Label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={(e) => setProgramData((p) => ({ ...p, meritsListFile: e.target.files?.[0] || null }))}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-primary file:text-primary-foreground file:px-3 file:py-1 file:rounded file:cursor-pointer hover:file:bg-primary/90"
+            />
+            {programData.meritsListFile && (
+              <p className="text-sm text-muted-foreground">Selected: {programData.meritsListFile.name}</p>
+            )}
+            {programData.meritsListUrl && !programData.meritsListFile && (
+              <p className="text-sm text-green-600">File already uploaded. Upload new file to replace.</p>
+            )}
+          </div>
+
           <Button onClick={handleSubmit} className="w-full" disabled={loadingPrograms}>
             {loadingPrograms ? "Processing..." : editingId ? "Update Program" : "Add Program"}
           </Button>
@@ -240,6 +288,19 @@ export default function ProgramsTab({ apiFetch }) {
                         </span>
                       </p>
                     </div>
+
+                    {p.meritsListUrl && (
+                      <div className="mt-2 pt-2 border-t">
+                        <a
+                          href={p.meritsListUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors w-full"
+                        >
+                          📋 View Merit List
+                        </a>
+                      </div>
+                    )}
 
                     {/* Buttons fixed at bottom */}
                     <div className="mt-auto pt-4 border-t">

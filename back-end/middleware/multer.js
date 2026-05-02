@@ -44,6 +44,17 @@ export const uploadsImg = multer({
   }
 }).single('image');
 
+export const uploadsDoc = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedMimes.includes(file.mimetype)) {
+      return cb(new Error('Only PDF and Word documents allowed'), false);
+    }
+    cb(null, true);
+  }
+}).single('meritsListFile');
 
 // Upload to Cloudinary helper function
 export const uploadToCloudinary = async (fileBuffer, folder = 'unisphere') => {

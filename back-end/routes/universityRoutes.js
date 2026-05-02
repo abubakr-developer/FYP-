@@ -1,6 +1,6 @@
 import express from 'express';
 import { isUniversityAdmin } from '../middleware/isUniversityAdmin.js';
-import { uploadsImg } from '../middleware/multer.js';
+import { uploadsImg, uploadsDoc } from '../middleware/multer.js';
 import userAuth from '../middleware/userAuth.js';
 import {
   loginUniversity,
@@ -34,9 +34,9 @@ universityRouter.post('/resetPassword', resetPassword);
 universityRouter.get('/profile', userAuth, getProfile);
 universityRouter.put('/profile', userAuth, updateProfile);
 
-universityRouter.post('/programs', userAuth, isUniversityAdmin, addProgram);
+universityRouter.post('/programs', userAuth, isUniversityAdmin, uploadsDoc, addProgram);
 universityRouter.get('/programs', userAuth, isUniversityAdmin, getPrograms);
-universityRouter.put('/programs/:programId', userAuth, isUniversityAdmin, updateProgram);
+universityRouter.put('/programs/:programId', userAuth, isUniversityAdmin, uploadsDoc, updateProgram);
 universityRouter.delete('/programs/:programId', userAuth, isUniversityAdmin, deleteProgram);
 
 universityRouter.post('/scholarships', userAuth, isUniversityAdmin, addScholarship);

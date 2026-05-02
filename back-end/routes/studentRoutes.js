@@ -7,6 +7,7 @@ import {
     getEvents,
     compareUniversities,
     getUniversityDetails,
+    getMeritLists,
     getAllUniversities,
     getAllScholarshipsPublic,
     getAllEventsPublic
@@ -21,7 +22,8 @@ router.post("/update-profile", userAuth, updateStudentProfile);
 router.get("/recommendations", userAuth, getMyRecommendations);
 router.get("/scholarships", userAuth, getScholarships);
 router.get("/events", userAuth, getEvents);
-router.get("/universities/:id", userAuth, getUniversityDetails); 
+router.get("/universities/:id", userAuth, getUniversityDetails);
+router.get("/merit-lists", userAuth, getMeritLists);
 
 // Public or semi-public routes
 router.post("/compare", compareUniversities);

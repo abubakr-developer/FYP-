@@ -23,6 +23,7 @@ import ResetPassword from "./pages/University/ResetPassword";
 import AdminLogin from "./pages/Admin/AdminLogin";
 import UniversityRegister from "./pages/University/UniversityRegister";
 import UniversityDetailedInformation from "./pages/Student/UniversityDetailedInformation";
+import MeritList from "./pages/Student/MeritList";
 import NotFound from "./pages/NotFound";
 
 // Protected / Dashboard pages
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/student-scholarships" element={<StudentScholarships />} />
             <Route path="/student-events" element={<StudentEvents />} />
             <Route path="/universitydetailinformation/:id" element={<UniversityDetailedInformation />} />
+            <Route path="/merit-lists" element={<MeritList />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRole="university" />}>

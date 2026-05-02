@@ -104,7 +104,9 @@ programs: {
       maxPercentage: { type: Number, default: 100 },
       isActive: { type: Boolean, default: true },
       fee: { type: Number, default: 0 },
-      seats: { type: Number, default: 0 },    }],
+      seats: { type: Number, default: 0 },
+      meritsListUrl: { type: String },
+    }],
     default: []
   },
 

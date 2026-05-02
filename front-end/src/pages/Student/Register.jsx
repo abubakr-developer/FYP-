@@ -94,7 +94,6 @@ export default function Register() {
         }
       );
 
-      // Handle successful registration
       if (response.data.success) {
         // Store token in localStorage
         localStorage.setItem("token", response.data.token);

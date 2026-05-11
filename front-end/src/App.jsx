@@ -17,6 +17,7 @@ import RoleSelection from "./pages/RoleSelection";
 import StudentLogin from "./pages/Student/StudentLogin";
 import StudentForgotPassword from "./pages/Student/StudentForgotPassword";
 import StudentResetPassword from "./pages/Student/StudentResetPassword";
+import Chatbot from "./pages/Student/Chatbot";
 import UniversityLogin from "./pages/University/UniversityLogin";
 import ForgetPassword from "./pages/University/ForgetPassword";
 import ResetPassword from "./pages/University/ResetPassword";
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/role-selection" element={<RoleSelection isOpen={true} />} />
           <Route path="/university-register" element={<UniversityRegister />} />
+          <Route path="/chatbot" element={<Chatbot />} />
 
           <Route element={<ProtectedRoute allowedRole="student" />}>
             <Route path="/student-dashboard" element={<StudentDashboard />} />

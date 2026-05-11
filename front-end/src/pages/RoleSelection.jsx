@@ -36,7 +36,7 @@ export default function RoleSelection({ isOpen, onClose }) {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop – covers everything, blurs background, blocks scroll */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-md"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md "
         onClick={onClose}
         aria-hidden="true"
       />
@@ -44,7 +44,7 @@ export default function RoleSelection({ isOpen, onClose }) {
       {/* Modal content – centered, above backdrop */}
       <div className="relative mt-[600px] z-[10000] w-full max-w-lg px-4 animate-in zoom-in-95 duration-300">
         <Card className="border-2 shadow-2xl bg-background/95 backdrop-blur-sm overflow-hidden">
-          <CardContent className="p-8 relative ">
+          <CardContent className="p-8 relative">
             <button
               onClick={onClose}
               className="absolute -top-4 -right-4 rounded-full bg-background m-8 p-3 shadow-md hover:bg-muted transition-colors z-10"

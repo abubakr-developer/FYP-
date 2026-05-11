@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import RoleSelection from "@/pages/RoleSelection";
+import Chatbot from "@/pages/Student/Chatbot";
 import { 
   Search, 
   GraduationCap, 
@@ -14,6 +15,7 @@ import {
   Users, 
   Building2,
   ArrowRight,
+  MessageSquare,
   CheckCircle2
 } from "lucide-react";
 
@@ -21,6 +23,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Home() {
   const [isRoleSelectionOpen, setIsRoleSelectionOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [stats, setStats] = useState({ universities: 0, students: 0 });
 
   useEffect(() => {
@@ -74,11 +77,21 @@ export default function Home() {
                     Browse Universities
                   </Button>
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(true)}
+                  className="w-full sm:w-auto"
+                >
+                  <Button size="lg" variant="secondary" className="w-full border-2 sm:w-auto bg-white hover:bg-primary hover:text-white">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Chat with UniBot
+                  </Button>
+                </button>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative ">
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg blur-3xl -z-10" />
-              <Card className="border-2">
+              <Card className="border-2 ">
                 <CardHeader>
                   <CardTitle>Quick Stats</CardTitle>
                 </CardHeader>
@@ -216,7 +229,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent text-accent-foreground text-2xl font-bold mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary text-accent-foreground text-2xl font-bold mb-4">
                 2
               </div>
               <h3 className="text-xl font-semibold mb-2">Get Recommendations</h3>
@@ -293,6 +306,7 @@ export default function Home() {
       </section>
 
       <Footer />
+      <Chatbot open={isChatOpen} onOpenChange={setIsChatOpen} />
       
       {/* Role Selection Modal */}
       <RoleSelection 

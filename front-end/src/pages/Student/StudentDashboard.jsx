@@ -23,13 +23,15 @@ import StudentProfile from "./StudentProfile";
 import StudentRecommendations from "./StudentRecommendations";
 import StudentScholarships from "./StudentScholarships";
 import StudentEvents from "./StudentEvents";
+import Chatbot from "./Chatbot";
 
 export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState("recommendations");
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col">
-      <StudentNavbar setActiveTab={setActiveTab} />
+      <StudentNavbar setActiveTab={setActiveTab} onOpenChat={() => setIsChatOpen(true)} />
       <section className="py-8 px-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background">
         <div className="container max-w-6xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Student Dashboard</h1>
@@ -72,6 +74,7 @@ export default function StudentDashboard() {
         </div>
       </section>
       <Footer />
+      <Chatbot open={isChatOpen} onOpenChange={setIsChatOpen} />
     </div>
   );
 }

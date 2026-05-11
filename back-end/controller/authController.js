@@ -284,7 +284,7 @@ if (storedData.otp.toString() !== otp.toString()) {
   }
 };
 
-// Update profile 
+
 export const updateProfile = async (req, res) => {
   console.log(">>>>>>>>>>>>>>", req.body);
   try {

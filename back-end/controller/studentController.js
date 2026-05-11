@@ -2,6 +2,97 @@ import mongoose from 'mongoose';
 import User from '../models/user.js';
 import University from '../models/university.js';
 import { parseEligibilityRange } from '../utils/criteriaParser.js';
+import Groq from "groq-sdk";
+
+const client = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+const SYSTEM_PROMPT = `
+You are UniBot, an intelligent assistant for Unisphere — a centralized SaaS platform
+that connects students with universities in Punjab, Pakistan.
+
+Your job is to help students with:
+1. Information about universities in Punjab (public and private)
+2. How to use Unisphere (registration, login, recommendations, scholarships, events)
+3. Admission criteria and merit-based recommendations
+4. Scholarship opportunities available through Unisphere
+5. Events and news posted by universities
+
+Universities you know about in Punjab, Pakistan include:
+- University of the Punjab (PU), Lahore
+- Lahore University of Management Sciences (LUMS)
+- University of Engineering and Technology (UET), Lahore
+- COMSATS University Islamabad, Lahore Campus
+- University of Central Punjab (UCP)
+- Forman Christian College University (FCCU)
+- Kinnaird College for Women
+- Government College University (GCU), Lahore
+- University of Sialkot (USKT)
+- University of Gujrat (UOG)
+- University of Sargodha (UOS)
+- Bahauddin Zakariya University (BZU), Multan
+- The Islamia University of Bahawalpur (IUB)
+- Virtual University of Pakistan (VU)
+- University of Education, Lahore
+
+How Unisphere works:
+- Students register and enter their intermediate percentage
+- The system recommends universities based on their academic performance
+- Students can browse scholarships, events, and news from universities
+- University admins manage their own profiles, programs, and scholarships
+- A Super Admin approves universities and manages the platform
+
+Rules:
+- ONLY answer questions related to Punjab universities or Unisphere
+- If someone asks something unrelated, politely say: "I can only help with Punjab universities and Unisphere-related questions."
+- Keep answers short, clear, and helpful
+- Always be friendly and professional
+`;
+
+export const chatbotMessage = async (req, res) => {
+  try {
+    const { message, history = [] } = req.body;
+
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required"
+      });
+    }
+
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...history.map(msg => ({
+        role: msg.role === "assistant" ? "assistant" : "user",
+        content: msg.content
+      })),
+      { role: "user", content: message }
+    ];
+
+    const response = await client.chat.completions.create({
+      model: "llama-3.3-70b-versatile", 
+      messages: messages,
+      max_tokens: 600,
+      temperature: 0.7,
+    });
+
+    const botReply = response.choices[0].message.content;
+
+    res.status(200).json({
+      success: true,
+      reply: botReply,
+    });
+
+  } catch (error) {
+    console.error("Chatbot Full Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Chatbot failed to respond. Please try again.",
+      error: error.message
+    });
+  }
+};
 
 function getProgramFaculty(programName) {
   if (!programName || typeof programName !== 'string') {
@@ -773,7 +864,6 @@ export const getMeritLists = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
-
 
 // GET ALL UNIVERSITIES (Public/Student)
 

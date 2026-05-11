@@ -5,15 +5,15 @@ import {
   Search, 
   TrendingUp, 
   Award, 
-  Bell,
-  Shield,
-  BarChart3,
-  FileText,
+  Target,
   Calendar,
+  FileText,
+  BarChart3,
   Users,
   Building2,
   GraduationCap,
-  Target
+  Shield,
+  MessageCircle   // Added for UniBot
 } from "lucide-react";
 
 export default function Features() {
@@ -27,7 +27,7 @@ export default function Features() {
     {
       icon: TrendingUp,
       title: "Personalized University Recommendations",
-      description: "Tailored university suggestions based on your academic percentage, field of interest, location preferences, and other key details you provide.",
+      description: "Tailored university suggestions based on your academic percentage, field of interest, and preferences.",
       color: "text-accent"
     },
     {
@@ -73,16 +73,23 @@ export default function Features() {
       color: "text-accent"
     },
     {
-      icon: Shield,
-      title: "Security-Focused Design",
-      description: "Platform designed with security best practices in mind. Full authentication and encryption features coming soon.",
-      color: "text-primary"
-    },
-    {
       icon: GraduationCap,
       title: "Program Explorer",
       description: "Explore detailed program information including curriculum, duration, fees, and career prospects.",
       color: "text-accent"
+    },
+    // ✅ New UniBot Feature
+    {
+      icon: MessageCircle,
+      title: "UniBot - AI Assistant",
+      description: "24/7 intelligent chatbot to answer your queries about Punjab universities, admissions, scholarships, merit lists, and UniSphere guidance.",
+      color: "text-purple-600"
+    },
+    {
+      icon: Shield,
+      title: "Security-Focused Design",
+      description: "Platform designed with security best practices in mind. Full authentication and encryption features coming soon.",
+      color: "text-primary"
     }
   ];
 
@@ -162,7 +169,6 @@ export default function Features() {
                   <p className="text-sm text-muted-foreground">✓ Manage university profiles</p>
                   <p className="text-sm text-muted-foreground">✓ Program and course management</p>
                   <p className="text-sm text-muted-foreground">✓ Scholarship administration</p>
-                  <p className="text-sm text-muted-foreground">✓ Student engagement analytics</p>
                 </CardContent>
               </CardHeader>
             </Card>
@@ -177,7 +183,6 @@ export default function Features() {
                   <p className="text-sm text-muted-foreground">✓ Platform oversight and control</p>
                   <p className="text-sm text-muted-foreground">✓ University validation & approval</p>
                   <p className="text-sm text-muted-foreground">✓ Manage University and Student</p>
-                  <p className="text-sm text-muted-foreground">✓ Content moderation</p>
                 </CardContent>
               </CardHeader>
             </Card>

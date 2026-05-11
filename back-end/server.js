@@ -8,6 +8,7 @@ import userRoutes from './routes/userRoutes.js';
 import universityRoutes from './routes/universityRoutes.js';
 import superAdminRoutes from './routes/superAdminRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
+import chatbotRoutes from './routes/chatbotRoutes.js';
 import user from './models/user.js';
 import { handleMulterError } from './middleware/multer.js';
 
@@ -28,6 +29,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/university", universityRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/student", chatbotRoutes);
 
 const startServer = async () => {
   try {

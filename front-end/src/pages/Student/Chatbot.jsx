@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { X, Send, GraduationCap } from "lucide-react";
 
-const Chatbot = ({ open, initialOpen = false, onOpenChange }) => {
+const Chatbot = ({ open, initialOpen = true, onOpenChange }) => {
   const isControlled = typeof open === "boolean";
   const [isOpen, setIsOpen] = useState(open ?? initialOpen);
   const [message, setMessage] = useState("");

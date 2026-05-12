@@ -4,9 +4,16 @@ import University from '../models/university.js';
 import { parseEligibilityRange } from '../utils/criteriaParser.js';
 import Groq from "groq-sdk";
 
-const client = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+let client = null;
+try {
+  if (process.env.GROQ_API_KEY) {
+    client = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
+  }
+} catch (error) {
+  console.error("Failed to initialize Groq client:", error.message);
+}
 
 const SYSTEM_PROMPT = `
 You are UniBot, an intelligent assistant for Unisphere — a centralized SaaS platform
@@ -21,30 +28,25 @@ Your job is to help students with:
 
 Universities you know about in Punjab, Pakistan include:
 - University of the Punjab (PU), Lahore
-- Lahore University of Management Sciences (LUMS)
+- Lahore University of Management Sciences (LUMS), Lahore
+- National University of Sciences and Technology (NUST), Islamabad
 - University of Engineering and Technology (UET), Lahore
-- COMSATS University Islamabad, Lahore Campus
-- University of Central Punjab (UCP)
-- Forman Christian College University (FCCU)
-- Kinnaird College for Women
 - Government College University (GCU), Lahore
-- University of Sialkot (USKT)
-- University of Gujrat (UOG)
-- University of Sargodha (UOS)
-- Bahauddin Zakariya University (BZU), Multan
-- The Islamia University of Bahawalpur (IUB)
-- Virtual University of Pakistan (VU)
-- University of Education, Lahore
+- University of Central Punjab (UCP), Lahore
+- Lahore College for Women University (LCWU), Lahore
+- University of Lahore (UOL), Lahore
+- Forman Christian College (FCC), Lahore
+- Kinnaird College for Women, Lahore
+- And many more...
 
-How Unisphere works:
-- Students register and enter their intermediate percentage
-- The system recommends universities based on their academic performance
-- Students can browse scholarships, events, and news from universities
-- University admins manage their own profiles, programs, and scholarships
-- A Super Admin approves universities and manages the platform
+Key features of Unisphere:
+- Personalized university recommendations based on intermediate percentage and field of interest
+- Scholarship listings from all universities
+- Event notifications and updates
+- Merit lists and admission status tracking
+- Direct communication with university admission offices
 
-Rules:
-- ONLY answer questions related to Punjab universities or Unisphere
+Guidelines for responses:
 - If someone asks something unrelated, politely say: "I can only help with Punjab universities and Unisphere-related questions."
 - Keep answers short, clear, and helpful
 - Always be friendly and professional
@@ -52,6 +54,13 @@ Rules:
 
 export const chatbotMessage = async (req, res) => {
   try {
+    if (!client) {
+      return res.status(503).json({
+        success: false,
+        message: "Chatbot service is currently unavailable. Please try again later."
+      });
+    }
+
     const { message, history = [] } = req.body;
 
     if (!message) {
@@ -864,6 +873,7 @@ export const getMeritLists = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+
 
 // GET ALL UNIVERSITIES (Public/Student)
 

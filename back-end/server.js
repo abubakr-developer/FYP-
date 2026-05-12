@@ -8,7 +8,10 @@ import userRoutes from './routes/userRoutes.js';
 import universityRoutes from './routes/universityRoutes.js';
 import superAdminRoutes from './routes/superAdminRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
+<<<<<<< HEAD
 import chatbotRoutes from './routes/chatbotRoutes.js';
+=======
+>>>>>>> 10f7325ccf7121f6fe7c679e055e11f869e20157
 import user from './models/user.js';
 import { handleMulterError } from './middleware/multer.js';
 
@@ -29,7 +32,10 @@ app.use("/api/user", userRoutes);
 app.use("/api/university", universityRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/student", studentRoutes);
+<<<<<<< HEAD
 app.use("/api/student", chatbotRoutes);
+=======
+>>>>>>> 10f7325ccf7121f6fe7c679e055e11f869e20157
 
 const startServer = async () => {
   try {

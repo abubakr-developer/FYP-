@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import User from '../models/user.js';
 import University from '../models/university.js';
 import { parseEligibilityRange } from '../utils/criteriaParser.js';
-<<<<<<< HEAD
 import Groq from "groq-sdk";
 
 let client = null;
@@ -103,8 +102,7 @@ export const chatbotMessage = async (req, res) => {
     });
   }
 };
-=======
->>>>>>> 10f7325ccf7121f6fe7c679e055e11f869e20157
+
 
 function getProgramFaculty(programName) {
   if (!programName || typeof programName !== 'string') {

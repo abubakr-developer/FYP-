@@ -18,7 +18,7 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cookieParser());
 
-// Fixed the missing ')' at the end
+
 app.use(cors({ 
   credentials: true, 
   origin: [
@@ -38,7 +38,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/university", universityRoutes);
 app.use("/api/superadmin", superAdminRoutes);
 app.use("/api/student", studentRoutes);
-app.use("/api/student", chatbotRoutes);
+app.use("/api/unibot", chatbotRoutes);
 
 const startServer = async () => {
   try {

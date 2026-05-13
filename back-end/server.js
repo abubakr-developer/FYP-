@@ -17,7 +17,16 @@ const port = process.env.PORT || 5000;
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ credentials: true, origin: ['http://localhost:5173', 'http://localhost:5174', 'https://fyp-inky-nine.vercel.app'] }));
+
+// Fixed the missing ')' at the end
+app.use(cors({ 
+  credentials: true, 
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:5174', 
+    'https://fyp-inky-nine.vercel.app'
+  ] 
+}));
 
 app.use("/uploads", express.static("uploads"));
 app.use("/files", express.static("files"));

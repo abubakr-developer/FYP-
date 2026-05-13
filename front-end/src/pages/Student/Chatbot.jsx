@@ -46,7 +46,7 @@ const Chatbot = ({ open, initialOpen = true, onOpenChange }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/unibot/chatbot/message", {
+      const response = await axios.post("http://localhost:5000/api/unibot/message", {
         message: userMessage,
         history: history,
       });

@@ -46,16 +46,16 @@ const Chatbot = ({ open, initialOpen = true, onOpenChange }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/unibot/chat`, {
-        message: userMessage,
-        history: history,
-      });
+  const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/unibot/message`, {
+    message: userMessage,
+    history: history || []   
+  });
 
-      setHistory([
-        ...updatedHistory,
-        { role: "assistant", content: response.data.reply },
-      ]);
-    } catch (error) {
+  setHistory(prev => [
+    ...prev,
+    { role: "assistant", content: response.data.reply }
+  ]);
+} catch (error) {
       setHistory([
         ...updatedHistory,
         { role: "assistant", content: "Sorry, I'm having trouble responding right now. Please try again." },
